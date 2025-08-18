@@ -76,27 +76,41 @@ const App = () => {
     setActiveTab(tabId);
   };
 
-  const handleSendMessage = () => {
+  const handleSendMessage = async () => {
     if (!chatInput.trim()) return;
 
-    const newUserMessage = {
-      id: Date.now(),
-      type: "user",
-      message: chatInput,
-    };
-
+    const newUserMessage = { id: Date.now(), type: "user", message: chatInput };
     setChatMessages((prev) => [...prev, newUserMessage]);
     const currentInput = chatInput;
     setChatInput("");
 
-    setTimeout(() => {
-      const botResponse = {
-        id: Date.now() + 1,
-        type: "bot",
-        message: getDefaultResponse(currentInput),
-      };
-      setChatMessages((prev) => [...prev, botResponse]);
-    }, 1000);
+    try {
+      const res = await fetch(`${process.env.REACT_APP_API_URL}/chat`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ message: currentInput }),
+      });
+      const data = await res.json();
+
+      // 일반 AI 응답
+      if (data.reply) {
+        setChatMessages((prev) => [...prev, { id: Date.now(), type: "bot", message: data.reply }]);
+      }
+
+      // 정책 추천 있으면 카드 형태로 추가
+      if (data.policies && data.policies.length > 0) {
+        setChatMessages((prev) => [
+          ...prev,
+          {
+            id: Date.now() + 1,
+            type: "policy",
+            policies: data.policies,
+          },
+        ]);
+      }
+    } catch (error) {
+      console.error("❌ Chat API error:", error);
+    }
   };
 
   const getDefaultResponse = (userMessage) => {
