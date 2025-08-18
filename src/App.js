@@ -300,50 +300,42 @@ const App = () => {
     <div className="result-content">
       <div className="chat-section">
         <h3>🤖 AI 복지 상담</h3>
+        {/* 1. 채팅 대화 영역 */}
         <div className="chat-container">
-          {chatMessages.map((msg) => {
-            if (msg.type === "bot" || msg.type === "user") {
-              return (
-                <div key={msg.id} className={`chat-message ${msg.type}`}>
-                  {msg.message.split("\n").map((line, index) => (
-                    <div key={index}>{line}</div>
-                  ))}
-                </div>
-              );
-            }
+          {chatMessages
+            .filter((msg) => msg.type === "bot" || msg.type === "user")
+            .map((msg) => (
+              <div key={msg.id} className={`chat-message ${msg.type}`}>
+                {msg.message.split("\n").map((line, index) => (
+                  <div key={index}>{line}</div>
+                ))}
+              </div>
+            ))}
+        </div>
 
-            if (msg.type === "policy") {
-              return (
-                <div key={msg.id} className="policy-card-container">
-                  {msg.policies.map((p, i) => (
-                    <div key={i} className="policy-card">
-                      <h4>{p.title}</h4>
-                      <p>{p.description}</p>
-
-                      {/* ✅ 마감일이 있으면 표시 */}
-                      {p.deadline && (
-                        <p className="deadline">📅 마감일: {p.deadline}</p>
-                      )}
-
-                      <button
-                        className="apply-btn"
-                        onClick={() => {
-                          setSelectedPolicy(p.title);
-                          setShowApplyModal(true);
-                        }}
-                      >
-                        신청하기
-                      </button>
-                    </div>
-                  ))}
-                </div>
-              );
-            }
-
-
-
-            return null;
-          })}
+        {/* 2. 정책 카드 영역 - 대화와 분리 */}
+        <div className="policy-card-container">
+          {chatMessages
+            .filter((msg) => msg.type === "policy")
+            .flatMap((msg) => msg.policies)
+            .map((p, i) => (
+              <div key={i} className="policy-card">
+                <h4>{p.title}</h4>
+                <p>{p.description}</p>
+                {p.deadline && (
+                  <p className="deadline">📅 마감일: {p.deadline}</p>
+                )}
+                <button
+                  className="apply-btn"
+                  onClick={() => {
+                    setSelectedPolicy(p.title);
+                    setShowApplyModal(true);
+                  }}
+                >
+                  신청하기
+                </button>
+              </div>
+            ))}
         </div>
 
         <div className="chat-input-container">
