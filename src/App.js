@@ -95,7 +95,7 @@ const App = () => {
       });
       const data = await res.json();
 
-      // 1. 챗봇 답변 (말풍선)
+      // 🗨️ 1. GPT 자연어 답변 (말풍선)
       if (data.reply) {
         setChatMessages((prev) => [
           ...prev,
@@ -103,20 +103,18 @@ const App = () => {
         ]);
       }
 
-      // 2. 정책 카드
+      // 🃏 2. 정책 카드 (항상 최신으로 교체)
       if (data.policies) {
         setChatMessages((prev) => [
-          // ✅ 기존 policy 메시지 제거
-          ...prev.filter((msg) => msg.type !== "policy"),
-          // ✅ 최신 정책만 추가
+          ...prev.filter((msg) => msg.type !== "policy"), // 기존 카드 지우고
           { id: Date.now() + 1, type: "policy", policies: data.policies }
         ]);
       }
-
     } catch (error) {
       console.error("❌ Chat API error:", error);
     }
   };
+
 
   const getDefaultResponse = (userMessage) => {
     const message = userMessage.toLowerCase();
@@ -309,8 +307,8 @@ const App = () => {
             .filter((msg) => msg.type === "bot" || msg.type === "user")
             .map((msg) => (
               <div key={msg.id} className={`chat-message ${msg.type}`}>
-                {msg.message.split("\n").map((line, index) => (
-                  <div key={index}>{line}</div>
+                {msg.message.split("\n").map((line, i) => (
+                  <div key={i}>{line}</div>
                 ))}
               </div>
             ))}
