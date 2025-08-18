@@ -16,6 +16,8 @@ import {
   AlertCircle,
 } from "lucide-react";
 import "./App.css"; // CSS 파일 import
+const API_URL = process.env.REACT_APP_API_URL || "http://localhost:5000";
+
 
 const WelfareApp = () => {
   const [activeTab, setActiveTab] = useState("home");
@@ -56,7 +58,23 @@ const WelfareApp = () => {
       localStorage.setItem("bookmarkedWelfares", JSON.stringify(newBookmarks));
       return newBookmarks;
     });
-  };
+    };
+  function parseIncome(value) {
+    if (!value) return null;
+
+    // "100-200" or "100~200"
+    if (value.includes("~") || value.includes("-")) {
+      const [min, max] = value.split(/~|-/).map(v => parseInt(v, 10));
+      return Math.round((min + max) / 2) * 10000;
+    }
+
+    if (value.includes("+")) {
+      return parseInt(value, 10) * 10000;
+    }
+
+    return parseInt(value, 10) * 10000;
+  }
+
 
   // 샘플 복지 데이터
   const sampleWelfares = [
@@ -183,7 +201,7 @@ const WelfareApp = () => {
   };
 
   // 채팅 메시지 전송
-  const handleSendMessage = async () => {
+   const handleSendMessage = async () => {
     if (!chatInput.trim()) return;
 
     const newUserMessage = {
@@ -191,18 +209,13 @@ const WelfareApp = () => {
       type: "user",
       message: chatInput,
     };
-
-    // 사용자 메시지 추가
     setChatMessages((prev) => [...prev, newUserMessage]);
     setChatInput("");
 
     try {
-      // GPT API 호출 (실제 구현 시 백엔드 API 엔드포인트 사용)
-      const response = await fetch("/api/chat", {
+      const response = await fetch(`${API_URL}/chat`, {
         method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
+        headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           message: chatInput,
           context: "복지 혜택 상담",
@@ -212,93 +225,65 @@ const WelfareApp = () => {
 
       if (response.ok) {
         const data = await response.json();
+        let replyText = "";
+        // 🔹 백엔드 응답(JSON 정책 리스트) 맞게 처리
+        if (data.policies && data.policies.length > 0) {
+          replyText = data.policies
+            .map((p, i) => `${i + 1}. ${p.title} - ${p.description}`)
+            .join("\n\n");
+        } else if (data.reply) {
+          replyText = data.reply;
+        } else {
+          replyText = "추천 가능한 정책을 찾지 못했습니다 😅";
+        }
+
+
         const botResponse = {
           id: Date.now() + 1,
           type: "bot",
-          message: data.reply,
+          message: replyText,
         };
         setChatMessages((prev) => [...prev, botResponse]);
       } else {
         throw new Error("API 호출 실패");
       }
     } catch (error) {
-      // API 호출 실패 시 기본 응답
       const botResponse = {
         id: Date.now() + 1,
         type: "bot",
-        message: getDefaultResponse(chatInput),
+        message: "죄송합니다. 챗봇 연결에 문제가 생겼어요 😅",
       };
       setChatMessages((prev) => [...prev, botResponse]);
     }
   };
+  const handleFindPolicies = async () => {
+    try {
+      const query = new URLSearchParams({
+        age: userInfo.age,
+        region: userInfo.region,
+        job: userInfo.job,
+        income: parseIncome(userInfo.income), // 숫자만
+        householdSize: userInfo.family === "child" ? 3 : 1,
+        limit: 5,
+      });
+      const res = await fetch(`${API_URL}/policies?${query.toString()}`);
+      const data = await res.json();
 
-  // 기본 응답 생성 (GPT API 연결 전 임시 응답)
-  const getDefaultResponse = (userMessage) => {
-    const message = userMessage.toLowerCase();
-
-    if (message.includes("청년") && message.includes("지원")) {
-      return "청년을 위한 다양한 지원 제도가 있어요! 주요 혜택으로는:\n\n1. 청년 월세 한시 특별지원 (월 20만원)\n2. 청년 구직활동 지원금\n3. 청년 내일채움공제\n4. 청년 전세자금 대출\n\n더 자세한 정보가 필요하시면 개인정보를 입력해서 맞춤 추천을 받아보세요! 😊";
+      if (data.policies && data.policies.length > 0) {
+        alert(
+          data.policies
+            .map((p, i) => `${i + 1}. ${p.title}\n${p.description}`)
+            .join("\n\n")
+        );
+      } else {
+        alert("조건에 맞는 정책을 찾지 못했어요 😅");
+      }
+    } catch (err) {
+      console.error("정책 조회 실패:", err);
+      alert("정책 데이터를 불러오는 데 실패했습니다.");
     }
-
-    if (
-      message.includes("주거") ||
-      message.includes("월세") ||
-      message.includes("전세")
-    ) {
-      return "주거 관련 복지 혜택을 찾고 계시는군요! 🏠\n\n주요 주거 지원 제도:\n1. 청년 월세 한시 특별지원\n2. 신혼부부 전세자금 대출\n3. 주거급여 (임차급여)\n4. 기존주택 전세임대\n\n나이, 소득, 가족 상황에 따라 지원 조건이 다르니 개인정보를 입력하시면 더 정확한 추천을 받을 수 있어요!";
-    }
-
-    if (
-      message.includes("교육") ||
-      message.includes("장학금") ||
-      message.includes("학비")
-    ) {
-      return "교육비 지원 제도에 관심이 있으시군요! 📚\n\n주요 교육 지원:\n1. 국가장학금 Ⅰ·Ⅱ유형\n2. 근로장학금\n3. 우수학생 국가장학금\n4. 다자녀 국가장학금\n\n소득분위와 성적에 따라 지원 금액이 달라집니다. 자세한 신청 조건과 방법이 궁금하시면 말씀해 주세요!";
-    }
-
-    if (
-      message.includes("고용") ||
-      message.includes("취업") ||
-      message.includes("일자리")
-    ) {
-      return "취업 및 고용 지원 제도를 안내해드릴게요! 💼\n\n주요 고용 지원:\n1. 청년 구직활동 지원금\n2. 국민취업지원제도\n3. 청년 내일채움공제\n4. 중소기업 청년 소득세 감면\n\n구직 상황과 경력에 따라 다양한 지원을 받을 수 있어요. 구체적인 상황을 알려주시면 더 정확한 안내가 가능합니다!";
-    }
-
-    if (
-      message.includes("의료") ||
-      message.includes("건강보험") ||
-      message.includes("병원비")
-    ) {
-      return "의료비 지원 제도를 찾고 계시는군요! 🏥\n\n주요 의료 지원:\n1. 의료급여 (기초생활보장)\n2. 재난적 의료비 지원\n3. 청년 건강보험료 지원\n4. 희귀질환 의료비 지원\n\n소득 수준과 질병 유형에 따라 지원 범위가 다릅니다. 더 자세한 정보가 필요하시면 구체적인 상황을 말씀해 주세요!";
-    }
-
-    if (
-      message.includes("육아") ||
-      message.includes("자녀") ||
-      message.includes("아이") ||
-      message.includes("출산")
-    ) {
-      return "육아 및 출산 관련 지원 제도를 안내해드릴게요! 👶\n\n주요 육아 지원:\n1. 아동수당 (월 10만원)\n2. 양육수당\n3. 보육료 지원\n4. 출산 지원금\n5. 육아휴직 급여\n\n자녀 수와 나이, 소득 수준에 따라 지원 내용이 달라져요. 가족 상황을 알려주시면 맞춤형 정보를 제공해드릴 수 있습니다!";
-    }
-
-    if (
-      message.includes("신청") ||
-      message.includes("어디서") ||
-      message.includes("방법")
-    ) {
-      return "복지 혜택 신청 방법을 안내해드릴게요! 📝\n\n신청 방법:\n1. 온라인: 복지로 홈페이지 (www.bokjiro.go.kr)\n2. 방문: 주민센터, 구청/시청\n3. 전화: 보건복지상담센터 129\n\n필요 서류:\n- 신분증\n- 소득 증빙서류\n- 가족관계증명서 등\n\n구체적인 복지 제도를 말씀해주시면 더 정확한 신청 방법을 안내해드릴게요!";
-    }
-
-    if (
-      message.includes("안녕") ||
-      message.includes("처음") ||
-      message.includes("시작")
-    ) {
-      return "안녕하세요! 복지콕 상담 챗봇입니다! 😊\n\n다음과 같은 복지 상담이 가능해요:\n• 청년 지원 제도\n• 주거 지원 (월세, 전세)\n• 교육비 지원 (장학금)\n• 취업 지원\n• 의료비 지원\n• 육아 지원\n\n어떤 복지 혜택이 궁금하신가요?";
-    }
-
-    return "죄송합니다. 해당 질문에 대한 정확한 답변을 드리기 어려워요. 😅\n\n다음과 같은 키워드로 질문해보세요:\n• 청년 지원\n• 주거 지원\n• 교육비 지원\n• 취업 지원\n• 의료비 지원\n• 육아 지원\n\n더 구체적인 상황을 알려주시면 맞춤형 안내를 해드릴 수 있어요!";
   };
+
 
   // 로그인 모달 컴포넌트
   const LoginModal = () =>
@@ -588,7 +573,10 @@ const WelfareApp = () => {
         </div>
       </div>
 
-      <button className="submit-button">맞춤 복지 찾기</button>
+      {/* 🔹 버튼에 API 호출 핸들러 연결 */}
+      <button className="submit-button" onClick={handleFindPolicies}>
+        맞춤 복지 찾기
+      </button>
 
       {/* 추천 정책 섹션 */}
       <div className="recommendation-policy">
@@ -617,6 +605,7 @@ const WelfareApp = () => {
       </div>
     </div>
   );
+
 
   const renderChat = () => (
     <div className="chat-content">
