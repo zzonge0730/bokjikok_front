@@ -106,10 +106,13 @@ const App = () => {
       // 2. 정책 카드
       if (data.policies) {
         setChatMessages((prev) => [
-          ...prev,
+          // ✅ 기존 policy 메시지 제거
+          ...prev.filter((msg) => msg.type !== "policy"),
+          // ✅ 최신 정책만 추가
           { id: Date.now() + 1, type: "policy", policies: data.policies }
         ]);
       }
+
     } catch (error) {
       console.error("❌ Chat API error:", error);
     }
