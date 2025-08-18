@@ -9,6 +9,8 @@ const App = () => {
   const [chatInput, setChatInput] = useState("");
   const [isLoggedIn, setIsLoggedIn] = useState(false);
   // App 컴포넌트 상단에 추가
+  const [showApplyModal, setShowApplyModal] = useState(false);
+  const [selectedPolicy, setSelectedPolicy] = useState(null);
   const [userName, setUserName] = useState("");
   const [loginForm, setLoginForm] = useState({ id: "", password: "" });
   const [previousRecords] = useState([
@@ -317,7 +319,15 @@ const App = () => {
                     <div key={i} className="policy-card">
                       <h4>{p.title}</h4>
                       <p>{p.description}</p>
-                      <button className="apply-btn">신청하기</button>
+                      <button
+                        className="apply-btn"
+                        onClick={() => {
+                          setSelectedPolicy(p.title);
+                          setShowApplyModal(true);
+                        }}
+                      >
+                        신청하기
+                      </button>
                     </div>
                   ))}
                 </div>
@@ -390,6 +400,39 @@ const App = () => {
       </button>
     </div>
   );
+  // 신청 모달
+  const ApplyModal = () =>
+    showApplyModal && (
+      <>
+        <div
+          className="modal-overlay"
+          onClick={() => setShowApplyModal(false)}
+        />
+        <div className="login-modal">
+          <div className="login-modal-content">
+            <div className="modal-header">
+              <h3>신청 안내</h3>
+              <button
+                onClick={() => setShowApplyModal(false)}
+                className="close-btn"
+              >
+                ✕
+              </button>
+            </div>
+            <p>
+              <strong>{selectedPolicy}</strong> 신청 기능은 현재 데모 버전에서는 준비
+              중입니다 🙏
+            </p>
+            <button
+              onClick={() => setShowApplyModal(false)}
+              className="login-btn"
+            >
+              확인
+            </button>
+          </div>
+        </div>
+      </>
+    );
 
   // 로그인 모달
   const LoginModal = () =>
@@ -473,6 +516,7 @@ const App = () => {
   return (
     <div className="app">
       <LoginModal />
+      <ApplyModal />
       {/* 메인 콘텐츠 영역 */}
       <div className="main-content">
         {/* 페이지 헤더 */}
