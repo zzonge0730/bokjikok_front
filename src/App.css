@@ -982,3 +982,16 @@ html {
   cursor: pointer;
 }
 
+.policy-card .deadline {
+  margin-top: 6px;
+  font-size: 14px;
+  color: #d9534f; /* 붉은 계열 */
+  font-weight: bold;
+  display: flex;
+  align-items: center;
+}
+
+.policy-card .deadline::before {
+  content: "⏰ ";
+  margin-right: 4px;
+}

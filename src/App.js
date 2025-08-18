@@ -319,6 +319,12 @@ const App = () => {
                     <div key={i} className="policy-card">
                       <h4>{p.title}</h4>
                       <p>{p.description}</p>
+
+                      {/* ✅ 마감일이 있으면 표시 */}
+                      {p.deadline && (
+                        <p className="deadline">📅 마감일: {p.deadline}</p>
+                      )}
+
                       <button
                         className="apply-btn"
                         onClick={() => {
@@ -333,6 +339,7 @@ const App = () => {
                 </div>
               );
             }
+
 
 
             return null;
