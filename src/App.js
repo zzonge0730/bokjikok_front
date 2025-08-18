@@ -85,7 +85,8 @@ const App = () => {
     setChatInput("");
 
     try {
-      const res = await fetch("/chat", {
+      const API_URL = process.env.REACT_APP_API_URL || "";
+      const res = await fetch(`${API_URL}/chat`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ message: chatInput }),
