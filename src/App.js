@@ -316,11 +316,13 @@ const App = () => {
                     <div key={i} className="policy-card">
                       <h4>{p.title}</h4>
                       <p>{p.description}</p>
+                      <button className="apply-btn">신청하기</button>
                     </div>
                   ))}
                 </div>
               );
             }
+
 
             return null;
           })}
