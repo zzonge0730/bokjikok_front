@@ -959,3 +959,30 @@ html {
 .new-diagnosis-btn:hover {
   background: #2563eb;
 }
+.policy-card-container {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  margin: 10px 0;
+}
+
+.policy-card {
+  border: 1px solid #ddd;
+  border-radius: 10px;
+  padding: 12px;
+  background: #f9fafb;
+  box-shadow: 0 2px 4px rgba(0,0,0,0.05);
+}
+
+.policy-card h4 {
+  margin: 0 0 5px;
+  font-size: 16px;
+  font-weight: bold;
+  color: #333;
+}
+
+.policy-card p {
+  margin: 0;
+  font-size: 14px;
+  color: #555;
+}

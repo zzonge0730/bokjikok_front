@@ -85,27 +85,26 @@ const App = () => {
     setChatInput("");
 
     try {
-      const res = await fetch(`${process.env.REACT_APP_API_URL}/chat`, {
+      const res = await fetch("/chat", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ message: currentInput }),
+        body: JSON.stringify({ message: chatInput }),
       });
       const data = await res.json();
 
-      // 일반 AI 응답
+      // 1. 챗봇 답변 (말풍선)
       if (data.reply) {
-        setChatMessages((prev) => [...prev, { id: Date.now(), type: "bot", message: data.reply }]);
-      }
-
-      // 정책 추천 있으면 카드 형태로 추가
-      if (data.policies && data.policies.length > 0) {
         setChatMessages((prev) => [
           ...prev,
-          {
-            id: Date.now() + 1,
-            type: "policy",
-            policies: data.policies,
-          },
+          { id: Date.now(), type: "bot", message: data.reply }
+        ]);
+      }
+
+      // 2. 정책 카드
+      if (data.policies) {
+        setChatMessages((prev) => [
+          ...prev,
+          { id: Date.now() + 1, type: "policy", policies: data.policies }
         ]);
       }
     } catch (error) {
@@ -292,21 +291,41 @@ const App = () => {
     </div>
   );
 
-  // 마이페이지
+ 
+  // 마이페이지 (AI 상담)
   const renderResult = () => (
     <div className="result-content">
-      {/* AI 상담 섹션만 유지 */}
       <div className="chat-section">
         <h3>🤖 AI 복지 상담</h3>
         <div className="chat-container">
-          {chatMessages.map((message) => (
-            <div key={message.id} className={`chat-message ${message.type}`}>
-              {message.message.split("\n").map((line, index) => (
-                <div key={index}>{line}</div>
-              ))}
-            </div>
-          ))}
+          {chatMessages.map((msg) => {
+            if (msg.type === "bot" || msg.type === "user") {
+              return (
+                <div key={msg.id} className={`chat-message ${msg.type}`}>
+                  {msg.message.split("\n").map((line, index) => (
+                    <div key={index}>{line}</div>
+                  ))}
+                </div>
+              );
+            }
+
+            if (msg.type === "policy") {
+              return (
+                <div key={msg.id} className="policy-card-container">
+                  {msg.policies.map((p, i) => (
+                    <div key={i} className="policy-card">
+                      <h4>{p.title}</h4>
+                      <p>{p.description}</p>
+                    </div>
+                  ))}
+                </div>
+              );
+            }
+
+            return null;
+          })}
         </div>
+
         <div className="chat-input-container">
           <input
             type="text"
@@ -323,6 +342,7 @@ const App = () => {
       </div>
     </div>
   );
+
 
   // 이전 기록 페이지
   const renderHistory = () => (
