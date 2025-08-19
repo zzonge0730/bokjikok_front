@@ -528,50 +528,50 @@ const App = () => {
       {/* 메인 콘텐츠 영역 */}
       <div className="main-content">
         {/* 페이지 헤더 */}
-        {/* 페이지 헤더 (홈에서는 숨김) */}
-        {activeTab !== "home" && (
-          <div className="page-header">
-            <div className="header-content">
-              {activeTab === "check" && (
-                <>
-                  <span className="header-icon">📋</span>
-                  <h1>조건 입력</h1>
-                </>
-              )}
-              {activeTab === "result" && (
-                <>
-                  <span className="header-icon">👤</span>
-                  <h1>마이페이지</h1>
-                </>
-              )}
-            </div>
+        <div className="page-header">
+          <div className="header-content">
+            {activeTab === "home" && (
+              <>
+                <span className="header-icon">🏛️</span>
+                <h1>대한민국 복지 진단</h1>
+              </>
+            )}
+            {activeTab === "check" && (
+              <>
+                <span className="header-icon">📋</span>
+                <h1>조건 입력</h1>
+              </>
+            )}
+            {activeTab === "result" && (
+              <>
+                <span className="header-icon">👤</span>
+                <h1>마이페이지</h1>
+              </>
+            )}
           </div>
-        )}
-
+        </div>
 
         {/* 메인 콘텐츠 */}
         <main className="content">{renderContent()}</main>
-        {/* 하단 네비게이션 (홈에서는 숨김) */}
-        {activeTab !== "home" && (
-          <div className="bottom-nav">
-            {menuItems.map(({ id, label, icon }) => (
-              <button
-                key={id}
-                type="button"
-                onClick={() => handleTabChange(id)}
-                className={`nav-item ${activeTab === id ? "active" : ""}`}
-              >
-                <div className="active-box">
-                  <span className="icon" aria-hidden>
-                    {icon}
-                  </span>
-                  <span className="label">{label}</span>
-                </div>
-              </button>
-            ))}
-          </div>
-        )}
 
+        {/* 하단 네비게이션 */}
+        <div className="bottom-nav">
+          {menuItems.map(({ id, label, icon }) => (
+            <button
+              key={id}
+              type="button"
+              onClick={() => handleTabChange(id)}
+              className={`nav-item ${activeTab === id ? "active" : ""}`}
+            >
+              <div className="active-box">
+                <span className="icon" aria-hidden>
+                  {icon}
+                </span>
+                <span className="label">{label}</span>
+              </div>
+            </button>
+          ))}
+        </div>
       </div>
     </div>
   );
