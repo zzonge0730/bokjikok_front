@@ -276,7 +276,7 @@
 
 .form-input,
 .form-select {
-  width: 100%;
+  width: 120%;
   padding: 0.5rem; /* 기존 1rem → 0.5rem으로 줄임 */
   border: 1px solid #d1d5db;
   border-radius: 0.5rem;
