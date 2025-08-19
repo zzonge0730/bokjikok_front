@@ -12,7 +12,6 @@ const App = () => {
   const [showApplyModal, setShowApplyModal] = useState(false);
   const [selectedPolicy, setSelectedPolicy] = useState(null);
   const [userName, setUserName] = useState("");
-  const [favorites, setFavorites] = useState([]);
   const [loginForm, setLoginForm] = useState({ id: "", password: "" });
   const [previousRecords] = useState([
     {
@@ -52,15 +51,7 @@ const App = () => {
     income: "",
     job: "",
   });
-  const toggleFavorite = (policy) => {
-    setFavorites((prev) => {
-      if (prev.includes(policy.title)) {
-        return prev.filter((p) => p !== policy.title); // 이미 있으면 제거
-      } else {
-        return [...prev, policy.title]; // 없으면 추가
-      }
-    });
-  };
+
   // App 컴포넌트 내부, handleTabChange 함수 근처에 추가
   const handleLogin = () => {
     // 간단한 더미 로그인 (실제로는 서버 인증 필요)
@@ -148,48 +139,94 @@ const App = () => {
     { id: "home", label: "홈", icon: "🏠" },
     { id: "check", label: "진단", icon: "📝" },
     { id: "result", label: "마이페이지", icon: "👤" },
-    { id: "history", label: "이전 기록", icon: "📑" },
   ];
 
-  // 홈 화면 (모바일 UI 최적화)
+  // 메인 페이지 (복지 진단 소개)
   const renderHome = () => (
     <div className="home-content">
-      {/* 상단 안내 */}
       <div className="welfare-intro">
-        <img src="/target-icon.png" alt="타겟 아이콘" className="target-icon-image" />
-        <h1 className="intro-title">나에게 맞는 복지 혜택을 찾아보세요</h1>
-        <p className="intro-sub">
-          간단한 정보만 입력하면 <br />
-          맞춤형 복지 정책을 추천해드립니다
-        </p>
-      </div>
+        <div className="intro-icon">
+          <div className="target-container">
+            <img
+              src="/target-icon.png"
+              alt="타겟 아이콘"
+              className="target-icon-image"
+            />
+          </div>
+        </div>
 
-      {/* 복지 진단 버튼 */}
-      <button className="start-button">✨ 복지 진단하기</button>
+        <h1 className="intro-title">
+          나에게 맞는
+          <br />
+          복지 혜택을 찾아보세요
+        </h1>
 
-      {/* 인기 복지 혜택 */}
-      <div className="popular-benefits">
-        <h2 className="section-title">📢 인기 있는 복지 혜택</h2>
-        <div className="benefit-card">🏠 청년 월세 지원</div>
-        <div className="benefit-card">💰 청년 창업 지원금</div>
-        <div className="benefit-card">🎓 국가장학금</div>
-        <div className="benefit-card">🩺 의료비 지원</div>
-      </div>
+        <div className="intro-subtitle">
+          <p>간단한 정보만 입력하면</p>
+          <p>맞춤형 복지 정책을 추천해드립니다</p>
+        </div>
 
-      {/* 로그인 안내 */}
-      <div className="login-section">
-        <button className="login-btn">🔑 로그인해서 이전 기록 보기</button>
-      </div>
+        <button
+          onClick={() => handleTabChange("check")}
+          className="start-button"
+        >
+          <span>🚀</span>
+          복지 진단 시작하기
+        </button>
 
-      {/* 이런 혜택 안내 */}
-      <div className="benefits-section">
-        <h2 className="section-title">📚 이런 혜택을 받을 수 있어요</h2>
-        <ul className="benefits-list">
-          <li className="benefit-item">🏡 주거 지원 (월세, 전세자금)</li>
-          <li className="benefit-item">💵 생활비 지원 (청년수당, 구직급여)</li>
-          <li className="benefit-item">🎓 교육 지원 (학자금, 직업훈련)</li>
-          <li className="benefit-item">🩺 의료 지원 (건강보험, 의료비)</li>
-        </ul>
+        {/* 로그인 섹션 추가 */}
+        <div className="login-section">
+          {isLoggedIn ? (
+            <div className="user-info-section">
+              <div className="user-welcome">
+                <span>👋 {userName}님 환영합니다!</span>
+                <button onClick={handleLogout} className="logout-btn">
+                  로그아웃
+                </button>
+              </div>
+              <button
+                onClick={() => handleTabChange("history")}
+                className="history-button"
+              >
+                📋 이전 진단 기록 보기
+              </button>
+            </div>
+          ) : (
+            <button
+              onClick={() => setShowLoginModal(true)}
+              className="login-button"
+            >
+              <span>🔑</span>
+              로그인해서 이전 기록 보기
+            </button>
+          )}
+        </div>
+
+        <div className="benefits-section">
+          <div className="benefits-header">
+            <span>📊</span>
+            <h3>이런 혜택을 받을 수 있어요</h3>
+          </div>
+
+          <div className="benefits-list">
+            <div className="benefit-item">
+              <span>🏠</span>
+              <span>주거 지원 (월세, 전세자금)</span>
+            </div>
+            <div className="benefit-item">
+              <span>💰</span>
+              <span>생활비 지원 (청년수당, 구직급여)</span>
+            </div>
+            <div className="benefit-item">
+              <span>🎓</span>
+              <span>교육 지원 (학자금, 직업훈련)</span>
+            </div>
+            <div className="benefit-item">
+              <span>🩺</span>
+              <span>의료 지원 (건강보험, 의료비)</span>
+            </div>
+          </div>
+        </div>
       </div>
     </div>
   );
@@ -206,7 +243,7 @@ const App = () => {
             </div>
             <input
               type="text"
-              placeholder="만 나이를 입력하세요"
+              placeholder="나이를 입력하세요"
               value={formData.age}
               onChange={(e) => handleInputChange("age", e.target.value)}
               className="form-input"
@@ -267,12 +304,11 @@ const App = () => {
   );
 
  
-  // 마이페이지 (AI 상담 + 즐겨찾기)
+  // 마이페이지 (AI 상담)
   const renderResult = () => (
     <div className="result-content">
       <div className="chat-section">
         <h3>🤖 AI 복지 상담</h3>
-
         {/* 1. 채팅 대화 영역 */}
         <div className="chat-container">
           {chatMessages
@@ -286,7 +322,7 @@ const App = () => {
             ))}
         </div>
 
-        {/* 2. 정책 카드 영역 */}
+        {/* 2. 정책 카드 영역 - 대화와 분리 */}
         <div className="policy-card-container">
           {chatMessages
             .filter((msg) => msg.type === "policy")
@@ -298,33 +334,19 @@ const App = () => {
                 {p.deadline && (
                   <p className="deadline">📅 마감일: {p.deadline}</p>
                 )}
-                <div className="card-buttons">
-                  <button
-                    className="apply-btn"
-                    onClick={() => {
-                      setSelectedPolicy(p.title);
-                      setShowApplyModal(true);
-                    }}
-                  >
-                    신청하기
-                  </button>
-                  <button
-                    className={`favorite-btn ${
-                      favorites.includes(p.title) ? "active" : ""
-                    }`}
-                    onClick={() => toggleFavorite(p)}
-                  >
-                    ⭐{" "}
-                    {favorites.includes(p.title)
-                      ? "즐겨찾기 해제"
-                      : "즐겨찾기"}
-                  </button>
-                </div>
+                <button
+                  className="apply-btn"
+                  onClick={() => {
+                    setSelectedPolicy(p.title);
+                    setShowApplyModal(true);
+                  }}
+                >
+                  신청하기
+                </button>
               </div>
             ))}
         </div>
 
-        {/* 입력창 */}
         <div className="chat-input-container">
           <input
             type="text"
@@ -339,25 +361,8 @@ const App = () => {
           </button>
         </div>
       </div>
-
-      {/* 3. 즐겨찾기 */}
-      <div className="favorites-section">
-        <h3>⭐ 즐겨찾는 복지 혜택</h3>
-        {favorites.length > 0 ? (
-          <div className="favorites-list">
-            {favorites.map((item, i) => (
-              <div key={i} className="favorite-item">
-                {item}
-              </div>
-            ))}
-          </div>
-        ) : (
-          <p>아직 즐겨찾기한 혜택이 없어요 😅</p>
-        )}
-      </div>
     </div>
   );
-
 
 
   // 이전 기록 페이지
@@ -543,12 +548,6 @@ const App = () => {
                 <h1>마이페이지</h1>
               </>
             )}
-            {activeTab === "history" && (
-              <>
-                <span className="header-icon">📜</span>
-                <h1>이전 진단 기록</h1>
-              </>
-            )}
           </div>
         </div>
 
@@ -556,28 +555,25 @@ const App = () => {
         <main className="content">{renderContent()}</main>
 
         {/* 하단 네비게이션 */}
-        {/* 하단 네비게이션 */}
-        {activeTab !== "home" && (
-          <div className="bottom-nav">
-            {menuItems.map(({ id, label, icon }) => (
-              <button
-                key={id}
-                type="button"
-                onClick={() => handleTabChange(id)}
-                className={`nav-item ${activeTab === id ? "active" : ""}`}
-              >
-                <div className="active-box">
-                  <span className="icon" aria-hidden>
-                    {icon}
-                  </span>
-                  <span className="label">{label}</span>
-                </div>
-              </button>
-            ))}
-          </div>
-        )}
-      </div>   
-    </div>    
+        <div className="bottom-nav">
+          {menuItems.map(({ id, label, icon }) => (
+            <button
+              key={id}
+              type="button"
+              onClick={() => handleTabChange(id)}
+              className={`nav-item ${activeTab === id ? "active" : ""}`}
+            >
+              <div className="active-box">
+                <span className="icon" aria-hidden>
+                  {icon}
+                </span>
+                <span className="label">{label}</span>
+              </div>
+            </button>
+          ))}
+        </div>
+      </div>
+    </div>
   );
 };
 
