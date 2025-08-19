@@ -1,5 +1,5 @@
 import React, { useState } from "react";
-import { Search, Home, User, MessageCircle } from "lucide-react";
+import { Search } from "lucide-react";
 import "./App.css";
 
 const App = () => {
@@ -11,7 +11,6 @@ const App = () => {
   const [selectedPolicy, setSelectedPolicy] = useState(null);
   const [userName, setUserName] = useState("");
   const [loginForm, setLoginForm] = useState({ id: "", password: "" });
-  const [favorites, setFavorites] = useState([]);
   const [previousRecords] = useState([
     {
       id: 1,
@@ -37,14 +36,6 @@ const App = () => {
     },
   ]);
   const [formData, setFormData] = useState({ age: "", income: "", job: "" });
-  const [searchQuery, setSearchQuery] = useState("");
-
-  // 인기 복지 혜택 (홈 화면)
-  const popularPolicies = [
-    { title: "청년내일채움공제", description: "청년 근속 지원 및 자산 형성을 위한 정책" },
-    { title: "청년 월세 지원", description: "청년층 주거 안정을 위해 월세를 지원" },
-    { title: "중소기업 취업청년 소득세 감면", description: "중소기업 청년 근로자의 소득세 절감 혜택" },
-  ];
 
   // 로그인 핸들러
   const handleLogin = () => {
@@ -52,7 +43,7 @@ const App = () => {
       setIsLoggedIn(true);
       setUserName(loginForm.id);
       setShowLoginModal(false);
-      setActiveTab("mypage");
+      setActiveTab("history");
       setLoginForm({ id: "", password: "" });
     } else {
       alert("아이디와 비밀번호를 입력해주세요!");
@@ -90,12 +81,15 @@ const App = () => {
       });
       const data = await res.json();
 
+      // 🗨️ GPT 답변 (텍스트)
       if (data.reply) {
         setChatMessages((prev) => [
           ...prev,
           { id: Date.now(), type: "bot", message: data.reply },
         ]);
       }
+
+      // 🃏 정책 카드 (항상 최신으로 교체)
       if (data.policies) {
         setChatMessages((prev) => [
           ...prev.filter((msg) => msg.type !== "policy"),
@@ -110,38 +104,17 @@ const App = () => {
   // 홈 화면
   const renderHome = () => (
     <div className="home-content">
-      <h1>🔥 인기 복지 혜택</h1>
-      <input
-        type="text"
-        placeholder="검색어를 입력하세요..."
-        value={searchQuery}
-        onChange={(e) => setSearchQuery(e.target.value)}
-      />
-      <div className="policy-card-container">
-        {popularPolicies
-          .filter(
-            (p) =>
-              p.title.includes(searchQuery) || p.description.includes(searchQuery)
-          )
-          .map((p, i) => (
-            <div key={i} className="policy-card">
-              <h4>{p.title}</h4>
-              <p>{p.description}</p>
-              <button onClick={() => setFavorites([...favorites, p])}>
-                ⭐ 즐겨찾기
-              </button>
-            </div>
-          ))}
-      </div>
+      <h1>나에게 맞는 복지 혜택을 찾아보세요</h1>
+      <button onClick={() => handleTabChange("check")} className="start-button">
+        🚀 복지 진단 시작하기
+      </button>
 
       <div className="login-section">
         {isLoggedIn ? (
           <div>
             <span>👋 {userName}님 환영합니다!</span>
             <button onClick={handleLogout}>로그아웃</button>
-            <button onClick={() => handleTabChange("history")}>
-              📋 이전 기록 보기
-            </button>
+            <button onClick={() => handleTabChange("history")}>📋 이전 기록 보기</button>
           </div>
         ) : (
           <button onClick={() => setShowLoginModal(true)}>🔑 로그인</button>
@@ -154,7 +127,7 @@ const App = () => {
   const renderCheck = () => (
     <div className="check-content">
       <div className="form-group">
-        <label>만 나이</label> {/* ✅ 수정 */}
+        <label>나이</label>
         <input
           type="text"
           value={formData.age}
@@ -253,66 +226,13 @@ const App = () => {
           <h4>{record.date}</h4>
           {record.results.map((r, i) => (
             <div key={i}>
-              <p>
-                {r.title} - {r.amount} ({r.status})
-              </p>
+              <p>{r.title} - {r.amount} ({r.status})</p>
             </div>
           ))}
         </div>
       ))}
     </div>
   );
-
-  // 마이페이지
-  const renderMypage = () => (
-    <div className="mypage-content">
-      <h3>👤 마이페이지</h3>
-      {isLoggedIn ? (
-        <>
-          <p>안녕하세요, {userName}님!</p>
-          <button onClick={handleLogout}>로그아웃</button>
-          <h4>⭐ 즐겨찾기</h4>
-          {favorites.length > 0 ? (
-            favorites.map((f, i) => (
-              <div key={i} className="policy-card">
-                <h4>{f.title}</h4>
-                <p>{f.description}</p>
-              </div>
-            ))
-          ) : (
-            <p>즐겨찾기한 정책이 없습니다.</p>
-          )}
-          <h4>💬 AI 상담 기록</h4>
-          {chatMessages.map((m, i) => (
-            <p key={i}>
-              [{m.type}] {m.message || (m.policies && "정책 카드")}
-            </p>
-          ))}
-        </>
-      ) : (
-        <button onClick={() => setShowLoginModal(true)}>🔑 로그인</button>
-      )}
-    </div>
-  );
-
-  // 하단 메뉴바
-  const BottomNav = () =>
-    activeTab !== "home" && (
-      <div className="bottom-nav">
-        <button onClick={() => handleTabChange("home")}>
-          <Home size={20} />홈
-        </button>
-        <button onClick={() => handleTabChange("check")}>
-          <Search size={20} />진단
-        </button>
-        <button onClick={() => handleTabChange("result")}>
-          <MessageCircle size={20} />상담
-        </button>
-        <button onClick={() => handleTabChange("mypage")}>
-          <User size={20} />마이페이지
-        </button>
-      </div>
-    );
 
   // 모달
   const ApplyModal = () =>
@@ -351,7 +271,6 @@ const App = () => {
       case "check": return renderCheck();
       case "result": return renderResult();
       case "history": return renderHistory();
-      case "mypage": return renderMypage();
       default: return renderHome();
     }
   };
@@ -361,7 +280,6 @@ const App = () => {
       <LoginModal />
       <ApplyModal />
       {renderContent()}
-      <BottomNav />
     </div>
   );
 };
