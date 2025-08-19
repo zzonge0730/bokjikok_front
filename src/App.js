@@ -152,94 +152,88 @@ const App = () => {
   ];
 
   // 메인 페이지 (복지 진단 소개)
-  const renderHome = () => (
-    <div className="home-content">
-      <div className="welfare-intro">
-        <div className="intro-icon">
-          <div className="target-container">
-            <img
-              src="/target-icon.png"
-              alt="타겟 아이콘"
-              className="target-icon-image"
-            />
-          </div>
+// 홈 화면 (원래 UI 유지 + 검색/인기혜택 추가)
+const renderHome = () => (
+  <div className="home-content">
+    <div className="welfare-intro">
+      <div className="intro-icon">
+        <div className="target-container">
+          <img src="/target-icon.png" alt="타겟 아이콘" className="target-icon-image" />
         </div>
+      </div>
 
-        <h1 className="intro-title">
-          나에게 맞는
-          <br />
-          복지 혜택을 찾아보세요
-        </h1>
+      <h1 className="intro-title">
+        나에게 맞는
+        <br />
+        복지 혜택을 찾아보세요
+      </h1>
 
-        <div className="intro-subtitle">
-          <p>간단한 정보만 입력하면</p>
-          <p>맞춤형 복지 정책을 추천해드립니다</p>
-        </div>
+      <div className="intro-subtitle">
+        <p>간단한 정보만 입력하면</p>
+        <p>맞춤형 복지 정책을 추천해드립니다</p>
+      </div>
 
-        <button
-          onClick={() => handleTabChange("check")}
-          className="start-button"
-        >
-          <span>🚀</span>
-          복지 진단 시작하기
-        </button>
+      {/* ✅ 복지 진단 버튼 대신 검색/인기혜택으로 교체 */}
+      <div className="search-bar">
+        <input
+          type="text"
+          placeholder="복지 혜택을 검색해보세요..."
+          className="search-input"
+        />
+        <button className="search-btn">🔍 검색</button>
+      </div>
 
-        {/* 로그인 섹션 추가 */}
-        <div className="login-section">
-          {isLoggedIn ? (
-            <div className="user-info-section">
-              <div className="user-welcome">
-                <span>👋 {userName}님 환영합니다!</span>
-                <button onClick={handleLogout} className="logout-btn">
-                  로그아웃
-                </button>
-              </div>
-              <button
-                onClick={() => handleTabChange("history")}
-                className="history-button"
-              >
-                📋 이전 진단 기록 보기
+      <div className="popular-benefits">
+        <div className="benefit-card">🏠 청년 월세 지원</div>
+        <div className="benefit-card">💰 청년 창업 지원금</div>
+        <div className="benefit-card">🎓 국가장학금</div>
+        <div className="benefit-card">🩺 의료비 지원</div>
+      </div>
+
+      {/* ✅ 로그인 섹션은 그대로 유지 */}
+      <div className="login-section">
+        {isLoggedIn ? (
+          <div className="user-info-section">
+            <div className="user-welcome">
+              <span>👋 {userName}님 환영합니다!</span>
+              <button onClick={handleLogout} className="logout-btn">
+                로그아웃
               </button>
             </div>
-          ) : (
             <button
-              onClick={() => setShowLoginModal(true)}
-              className="login-button"
+              onClick={() => handleTabChange("history")}
+              className="history-button"
             >
-              <span>🔑</span>
-              로그인해서 이전 기록 보기
+              📋 이전 진단 기록 보기
             </button>
-          )}
+          </div>
+        ) : (
+          <button
+            onClick={() => setShowLoginModal(true)}
+            className="login-button"
+          >
+            <span>🔑</span>
+            로그인해서 이전 기록 보기
+          </button>
+        )}
+      </div>
+
+      {/* ✅ 기존 "이런 혜택을 받을 수 있어요" 섹션도 유지 */}
+      <div className="benefits-section">
+        <div className="benefits-header">
+          <span>📊</span>
+          <h3>이런 혜택을 받을 수 있어요</h3>
         </div>
-
-        <div className="benefits-section">
-          <div className="benefits-header">
-            <span>📊</span>
-            <h3>이런 혜택을 받을 수 있어요</h3>
-          </div>
-
-          <div className="benefits-list">
-            <div className="benefit-item">
-              <span>🏠</span>
-              <span>주거 지원 (월세, 전세자금)</span>
-            </div>
-            <div className="benefit-item">
-              <span>💰</span>
-              <span>생활비 지원 (청년수당, 구직급여)</span>
-            </div>
-            <div className="benefit-item">
-              <span>🎓</span>
-              <span>교육 지원 (학자금, 직업훈련)</span>
-            </div>
-            <div className="benefit-item">
-              <span>🩺</span>
-              <span>의료 지원 (건강보험, 의료비)</span>
-            </div>
-          </div>
+        <div className="benefits-list">
+          <div className="benefit-item">🏠 주거 지원 (월세, 전세자금)</div>
+          <div className="benefit-item">💰 생활비 지원 (청년수당, 구직급여)</div>
+          <div className="benefit-item">🎓 교육 지원 (학자금, 직업훈련)</div>
+          <div className="benefit-item">🩺 의료 지원 (건강보험, 의료비)</div>
         </div>
       </div>
     </div>
-  );
+  </div>
+);
 
   // 조건 입력 페이지
   const renderCheck = () => (
@@ -603,26 +597,26 @@ const App = () => {
         <main className="content">{renderContent()}</main>
 
         {/* 하단 네비게이션 */}
-        <div className="bottom-nav">
-          {menuItems.map(({ id, label, icon }) => (
-            <button
-              key={id}
-              type="button"
-              onClick={() => handleTabChange(id)}
-              className={`nav-item ${activeTab === id ? "active" : ""}`}
-            >
-              <div className="active-box">
-                <span className="icon" aria-hidden>
-                  {icon}
-                </span>
-                <span className="label">{label}</span>
-              </div>
-            </button>
-          ))}
-        </div>
-      </div>
-    </div>
-  );
-};
+        {/* 하단 네비게이션 */}
+        {activeTab !== "home" && (
+          <div className="bottom-nav">
+            {menuItems.map(({ id, label, icon }) => (
+              <button
+                key={id}
+                type="button"
+                onClick={() => handleTabChange(id)}
+                className={`nav-item ${activeTab === id ? "active" : ""}`}
+              >
+                <div className="active-box">
+                  <span className="icon" aria-hidden>
+                    {icon}
+                  </span>
+                  <span className="label">{label}</span>
+                </div>
+              </button>
+            ))}
+          </div>
+        )}
+
 
 export default App;
