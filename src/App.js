@@ -284,12 +284,20 @@ const App = () => {
           </div>
 
           <button
-            onClick={() => handleTabChange("result")}
+            onClick={() => {
+              if (!formData.age || !formData.income || !formData.job) {
+                alert("나이, 소득, 직업을 모두 입력해주세요 😊");
+                return;
+              }
+              handleTabChange("result");
+            }}
             className="diagnosis-button"
+            disabled={!formData.age || !formData.income || !formData.job} // ✅ 추가
           >
             <Search size={20} />
             진단 시작하기
           </button>
+
         </div>
       </div>
     </div>
