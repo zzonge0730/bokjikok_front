@@ -617,6 +617,9 @@ const renderHome = () => (
             ))}
           </div>
         )}
-
+      </div>   
+    </div>    
+  );
+};
 
 export default App;
