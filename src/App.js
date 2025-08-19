@@ -1,14 +1,33 @@
 import React, { useState } from "react";
+import { useEffect } from "react"; // 이미 있다면 생략
 import { Home, FileText, Target, Calendar, Search, X } from "lucide-react";
 import "./App.css";
-
+import MyPage from "./MyPage";
 const App = () => {
   const [activeTab, setActiveTab] = useState("home");
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [showLoginModal, setShowLoginModal] = useState(false);
   const [chatInput, setChatInput] = useState("");
   const [isLoggedIn, setIsLoggedIn] = useState(false);
-  // App 컴포넌트 상단에 추가
+  const [hasSubmittedConditions, setHasSubmittedConditions] = useState(false);
+  useEffect(() => {
+    if (hasSubmittedConditions) {
+      setActiveTab("result");
+    }
+  }, [hasSubmittedConditions]);
+ // App 컴포넌트 상단에 추가
+  const [favoritePolicies, setFavoritePolicies] = useState([]);
+  const toggleFavorite = (policy) => {
+  const exists = favoritePolicies.find((item) => item.title === policy.title);
+  if (exists) {
+    setFavoritePolicies((prev) =>
+      prev.filter((item) => item.title !== policy.title)
+    );
+  } else {
+    setFavoritePolicies((prev) => [...prev, policy]);
+  }
+};
+
   const [showApplyModal, setShowApplyModal] = useState(false);
   const [selectedPolicy, setSelectedPolicy] = useState(null);
   const [userName, setUserName] = useState("");
@@ -75,8 +94,23 @@ const App = () => {
   };
 
   const handleTabChange = (tabId) => {
+    // 홈으로 가면 모든 조건 초기화
+    if (tabId === "home") {
+      setHasSubmittedConditions(false); // 제출 여부 리셋
+      setFormData({ age: "", income: "", job: "" }); // ✅ 조건 입력값 초기화
+    }
+
+    // 마이페이지는 조건을 입력했을 때만 접근 가능
+    if (tabId === "result" && !hasSubmittedConditions) {
+      alert("진단 조건을 먼저 입력해주세요 😊");
+      setActiveTab("check");
+      return;
+    }
+
     setActiveTab(tabId);
   };
+
+
 
   const handleSendMessage = async () => {
     if (!chatInput.trim()) return;
@@ -243,7 +277,7 @@ const App = () => {
             </div>
             <input
               type="text"
-              placeholder="나이를 입력하세요"
+              placeholder="만 나이를 입력하세요"
               value={formData.age}
               onChange={(e) => handleInputChange("age", e.target.value)}
               className="form-input"
@@ -289,14 +323,15 @@ const App = () => {
                 alert("나이, 소득, 직업을 모두 입력해주세요 😊");
                 return;
               }
-              handleTabChange("result");
+              setHasSubmittedConditions(true);
             }}
             className="diagnosis-button"
-            disabled={!formData.age || !formData.income || !formData.job} // ✅ 추가
+            disabled={!formData.age || !formData.income || !formData.job}
           >
             <Search size={20} />
             진단 시작하기
           </button>
+
 
         </div>
       </div>
@@ -329,7 +364,15 @@ const App = () => {
             .flatMap((msg) => msg.policies)
             .map((p, i) => (
               <div key={i} className="policy-card">
-                <h4>{p.title}</h4>
+                <div className="card-header">
+                  <h4>{p.title}</h4>
+                  <button
+                    className="favorite-btn"
+                    onClick={() => toggleFavorite(p)}
+                  >
+                    {favoritePolicies.find((f) => f.title === p.title) ? "★" : "☆"}
+                  </button>
+                </div>
                 <p>{p.description}</p>
                 {p.deadline && (
                   <p className="deadline">📅 마감일: {p.deadline}</p>
@@ -344,6 +387,7 @@ const App = () => {
                   신청하기
                 </button>
               </div>
+
             ))}
         </div>
 
@@ -361,6 +405,29 @@ const App = () => {
           </button>
         </div>
       </div>
+        {/* ⭐ 즐겨찾기 리스트 추가 */}
+        {favoritePolicies.length > 0 && (
+          <div className="favorite-list">
+            <h4>⭐ 즐겨찾기한 정책</h4>
+            {favoritePolicies.map((fav, i) => (
+              <div key={i} className="policy-card">
+                <h4>{fav.title}</h4>
+                <p>{fav.description}</p>
+                {fav.deadline && <p className="deadline">📅 마감일: {fav.deadline}</p>}
+                <button
+                  className="apply-btn"
+                  onClick={() => {
+                    setSelectedPolicy(fav.title);
+                    setShowApplyModal(true);
+                  }}
+                >
+                  신청하기
+                </button>
+              </div>
+            ))}
+          </div>
+        )}
+
     </div>
   );
 
@@ -520,11 +587,11 @@ const App = () => {
         return renderHome();
     }
   };
-
   return (
     <div className="app">
       <LoginModal />
       <ApplyModal />
+
       {/* 메인 콘텐츠 영역 */}
       <div className="main-content">
         {/* 페이지 헤더 */}
@@ -553,8 +620,10 @@ const App = () => {
 
         {/* 메인 콘텐츠 */}
         <main className="content">{renderContent()}</main>
+      </div>
 
-        {/* 하단 네비게이션 */}
+      {/* ✅ 하단 네비게이션: 홈에서는 안 보이게 */}
+      {activeTab !== "home" && (
         <div className="bottom-nav">
           {menuItems.map(({ id, label, icon }) => (
             <button
@@ -572,9 +641,10 @@ const App = () => {
             </button>
           ))}
         </div>
-      </div>
+      )}
     </div>
   );
+
 };
 
 export default App;

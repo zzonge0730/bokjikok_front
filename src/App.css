@@ -228,20 +228,9 @@
   margin-bottom: 0.5rem;
   position: relative;
   z-index: 2;
-  max-width: 320px; /* 최대 폭 제한 */
+  max-width: 100%; /* 최대 폭 제한 */
 }
 
-.form-container {
-  background-color: #f3f4f6;
-  border-radius: 1.5rem;
-  padding: 2rem;
-  margin-left: 1rem;
-  margin-right: 1rem;
-  margin-top: 1rem;
-  margin-bottom: 1rem;
-  position: relative;
-  box-shadow: -5px 0 0 #6fb4fd; /* 왼쪽 파란색 그림자 */
-}
 
 .form-wrapper {
   border: none;
@@ -249,12 +238,14 @@
   display: flex;
   flex-direction: column;
   gap: 0.75rem;
+  width: 100%;
+  max-width: 100%; /* 최대 폭 제한 */
 }
 
 .form-group {
   background-color: white;
   border-radius: 0.75rem;
-  padding: 0.5rem;
+  padding: 1rem;
   box-shadow: 0 1px 3px 0 rgba(0, 0, 0, 0.1);
 }
 
@@ -276,7 +267,7 @@
 
 .form-input,
 .form-select {
-  width: 120%;
+  width: 100%;
   padding: 0.5rem; /* 기존 1rem → 0.5rem으로 줄임 */
   border: 1px solid #d1d5db;
   border-radius: 0.5rem;
@@ -419,65 +410,7 @@
   box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1);
 }
 
-/* === 하단 네비게이션 === */
-.bottom-nav {
-  position: fixed;
-  bottom: 0;
-  left: 50%;
-  transform: translateX(-50%);
-  max-width: 400px;
-  width: 100%;
-  background-color: #2f3f53;
-  border-top: 1px solid #e5e7eb;
-  display: flex;
-  z-index: 30;
-  box-shadow: 0 -1px 3px 0 rgba(0, 0, 0, 0.1);
-}
 
-.nav-item {
-  flex: 1;
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  gap: 0.25rem;
-  padding: 0.75rem 0.5rem;
-  border: none;
-  background: none;
-  cursor: pointer;
-  transition: all 0.2s;
-  color: #6b7280;
-  min-height: 70px;
-}
-
-.nav-item .icon {
-  font-size: 1rem; /* 이모지 크기 */
-}
-
-.nav-item .label {
-  font-size: 0.7rem; /* 글자 크기 */
-  font-weight: 500;
-}
-
-/* 실제 배경은 내부 박스에만 적용 */
-.nav-item .active-box {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  gap: 0.25rem;
-  padding: 0.3rem 0.6rem; /* 여기 크기로 조절 */
-  border-radius: 8px;
-}
-
-.nav-item.active .active-box {
-  background-color: #71a1e8;
-  color: #ffffff;
-  border-radius: 12px; /* 모서리 둥글게 (원하면) */
-}
-
-.nav-item span {
-  font-size: 0.75rem;
-  font-weight: 500;
-}
 
 /* === 반응형 조정 === */
 @media (max-width: 640px) {
@@ -996,12 +929,6 @@ html {
   margin-right: 4px;
 }
 
-/* 전체 앱 레이아웃 */
-.app {
-  font-family: "Noto Sans KR", sans-serif;
-  padding: 16px;
-  box-sizing: border-box;
-}
 
 /* 제목 */
 h1, h3, h4 {
@@ -1069,12 +996,13 @@ button:disabled {
   font-size: 14px;
 }
 
-/* 하단 네비게이션 */
 .bottom-nav {
   position: fixed;
   bottom: 0;
-  left: 0;
-  right: 0;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 100%;
+  max-width: 400px; /* 메인 콘텐츠의 최대 폭과 동일하게 */
   background: white;
   border-top: 1px solid #ddd;
   display: flex;
@@ -1082,6 +1010,8 @@ button:disabled {
   padding: 8px 0;
   z-index: 100;
 }
+
+
 
 .bottom-nav button {
   background: none;
@@ -1097,46 +1027,6 @@ button:disabled {
   margin-bottom: 2px;
 }
 
-/* 채팅 */
-.chat-container {
-  background: #f9f9f9;
-  border: 1px solid #eee;
-  border-radius: 8px;
-  padding: 12px;
-  margin-bottom: 12px;
-  max-height: 300px;
-  overflow-y: auto;
-}
-
-.chat-message {
-  margin: 6px 0;
-  padding: 8px 10px;
-  border-radius: 6px;
-  max-width: 80%;
-}
-
-.chat-message.bot {
-  background: #e8f0fe;
-  align-self: flex-start;
-}
-
-.chat-message.user {
-  background: #d1ffd6;
-  align-self: flex-end;
-  margin-left: auto;
-}
-
-.chat-input-container {
-  display: flex;
-  gap: 8px;
-}
-
-.chat-input-container input {
-  flex: 1;
-  padding: 8px;
-  border: 1px solid #ddd;
-  border-radius: 6px;
-}
 
 /* 모달 */
 .modal {
@@ -1153,4 +1043,3 @@ button:disabled {
   width: 90%;
   max-width: 400px;
 }
-
