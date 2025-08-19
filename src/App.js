@@ -12,6 +12,7 @@ const App = () => {
   const [showApplyModal, setShowApplyModal] = useState(false);
   const [selectedPolicy, setSelectedPolicy] = useState(null);
   const [userName, setUserName] = useState("");
+  const [favorites, setFavorites] = useState([]);
   const [loginForm, setLoginForm] = useState({ id: "", password: "" });
   const [previousRecords] = useState([
     {
@@ -51,7 +52,15 @@ const App = () => {
     income: "",
     job: "",
   });
-
+  const toggleFavorite = (policy) => {
+    setFavorites((prev) => {
+      if (prev.includes(policy.title)) {
+        return prev.filter((p) => p !== policy.title); // 이미 있으면 제거
+      } else {
+        return [...prev, policy.title]; // 없으면 추가
+      }
+    });
+  };
   // App 컴포넌트 내부, handleTabChange 함수 근처에 추가
   const handleLogin = () => {
     // 간단한 더미 로그인 (실제로는 서버 인증 필요)
@@ -139,6 +148,7 @@ const App = () => {
     { id: "home", label: "홈", icon: "🏠" },
     { id: "check", label: "진단", icon: "📝" },
     { id: "result", label: "마이페이지", icon: "👤" },
+    { id: "history", label: "이전 기록", icon: "📑" },
   ];
 
   // 메인 페이지 (복지 진단 소개)
@@ -304,11 +314,12 @@ const App = () => {
   );
 
  
-  // 마이페이지 (AI 상담)
+  // 마이페이지 (AI 상담 + 즐겨찾기)
   const renderResult = () => (
     <div className="result-content">
       <div className="chat-section">
         <h3>🤖 AI 복지 상담</h3>
+
         {/* 1. 채팅 대화 영역 */}
         <div className="chat-container">
           {chatMessages
@@ -322,7 +333,7 @@ const App = () => {
             ))}
         </div>
 
-        {/* 2. 정책 카드 영역 - 대화와 분리 */}
+        {/* 2. 정책 카드 영역 */}
         <div className="policy-card-container">
           {chatMessages
             .filter((msg) => msg.type === "policy")
@@ -334,19 +345,33 @@ const App = () => {
                 {p.deadline && (
                   <p className="deadline">📅 마감일: {p.deadline}</p>
                 )}
-                <button
-                  className="apply-btn"
-                  onClick={() => {
-                    setSelectedPolicy(p.title);
-                    setShowApplyModal(true);
-                  }}
-                >
-                  신청하기
-                </button>
+                <div className="card-buttons">
+                  <button
+                    className="apply-btn"
+                    onClick={() => {
+                      setSelectedPolicy(p.title);
+                      setShowApplyModal(true);
+                    }}
+                  >
+                    신청하기
+                  </button>
+                  <button
+                    className={`favorite-btn ${
+                      favorites.includes(p.title) ? "active" : ""
+                    }`}
+                    onClick={() => toggleFavorite(p)}
+                  >
+                    ⭐{" "}
+                    {favorites.includes(p.title)
+                      ? "즐겨찾기 해제"
+                      : "즐겨찾기"}
+                  </button>
+                </div>
               </div>
             ))}
         </div>
 
+        {/* 입력창 */}
         <div className="chat-input-container">
           <input
             type="text"
@@ -361,8 +386,25 @@ const App = () => {
           </button>
         </div>
       </div>
+
+      {/* 3. 즐겨찾기 */}
+      <div className="favorites-section">
+        <h3>⭐ 즐겨찾는 복지 혜택</h3>
+        {favorites.length > 0 ? (
+          <div className="favorites-list">
+            {favorites.map((item, i) => (
+              <div key={i} className="favorite-item">
+                {item}
+              </div>
+            ))}
+          </div>
+        ) : (
+          <p>아직 즐겨찾기한 혜택이 없어요 😅</p>
+        )}
+      </div>
     </div>
   );
+
 
 
   // 이전 기록 페이지
@@ -546,6 +588,12 @@ const App = () => {
               <>
                 <span className="header-icon">👤</span>
                 <h1>마이페이지</h1>
+              </>
+            )}
+            {activeTab === "history" && (
+              <>
+                <span className="header-icon">📜</span>
+                <h1>이전 진단 기록</h1>
               </>
             )}
           </div>
