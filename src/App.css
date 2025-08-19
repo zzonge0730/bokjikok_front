@@ -995,3 +995,161 @@ html {
   content: "⏰ ";
   margin-right: 4px;
 }
+
+/* 전체 앱 레이아웃 */
+.app {
+  font-family: "Noto Sans KR", sans-serif;
+  padding: 16px;
+  box-sizing: border-box;
+}
+
+/* 제목 */
+h1, h3, h4 {
+  margin: 12px 0;
+}
+
+/* 입력 폼 */
+.form-group {
+  margin-bottom: 12px;
+}
+
+.form-group label {
+  display: block;
+  margin-bottom: 4px;
+  font-weight: bold;
+}
+
+.form-group input,
+.form-group select {
+  width: 100%;
+  padding: 8px;
+  border: 1px solid #ddd;
+  border-radius: 6px;
+  font-size: 14px;
+}
+
+button {
+  padding: 8px 12px;
+  margin-top: 8px;
+  background: #007bff;
+  border: none;
+  border-radius: 6px;
+  color: white;
+  font-size: 14px;
+  cursor: pointer;
+}
+
+button:disabled {
+  background: #ccc;
+  cursor: not-allowed;
+}
+
+/* 카드 컨테이너 */
+.policy-card-container {
+  display: grid;
+  gap: 12px;
+  margin-top: 16px;
+}
+
+.policy-card {
+  border: 1px solid #eee;
+  border-radius: 8px;
+  padding: 12px;
+  background: #fafafa;
+  box-shadow: 0 2px 4px rgba(0,0,0,0.05);
+}
+
+.policy-card h4 {
+  margin-bottom: 4px;
+  font-size: 16px;
+}
+
+.policy-card p {
+  margin: 4px 0;
+  font-size: 14px;
+}
+
+/* 하단 네비게이션 */
+.bottom-nav {
+  position: fixed;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  background: white;
+  border-top: 1px solid #ddd;
+  display: flex;
+  justify-content: space-around;
+  padding: 8px 0;
+  z-index: 100;
+}
+
+.bottom-nav button {
+  background: none;
+  border: none;
+  color: #333;
+  font-size: 13px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+
+.bottom-nav button svg {
+  margin-bottom: 2px;
+}
+
+/* 채팅 */
+.chat-container {
+  background: #f9f9f9;
+  border: 1px solid #eee;
+  border-radius: 8px;
+  padding: 12px;
+  margin-bottom: 12px;
+  max-height: 300px;
+  overflow-y: auto;
+}
+
+.chat-message {
+  margin: 6px 0;
+  padding: 8px 10px;
+  border-radius: 6px;
+  max-width: 80%;
+}
+
+.chat-message.bot {
+  background: #e8f0fe;
+  align-self: flex-start;
+}
+
+.chat-message.user {
+  background: #d1ffd6;
+  align-self: flex-end;
+  margin-left: auto;
+}
+
+.chat-input-container {
+  display: flex;
+  gap: 8px;
+}
+
+.chat-input-container input {
+  flex: 1;
+  padding: 8px;
+  border: 1px solid #ddd;
+  border-radius: 6px;
+}
+
+/* 모달 */
+.modal {
+  position: fixed;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  background: white;
+  border: 1px solid #ddd;
+  border-radius: 8px;
+  padding: 20px;
+  box-shadow: 0 4px 12px rgba(0,0,0,0.2);
+  z-index: 200;
+  width: 90%;
+  max-width: 400px;
+}
