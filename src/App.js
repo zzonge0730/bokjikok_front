@@ -322,7 +322,7 @@ const App = () => {
               </div>
               <input
                 type="text"
-                placeholder="나이를 입력하세요"
+                placeholder="만 나이를 입력하세요"
                 value={formData.age}
                 onChange={(e) => handleInputChange("age", e.target.value)}
                 className="form-input"
