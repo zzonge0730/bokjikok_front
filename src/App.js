@@ -18,29 +18,7 @@ const App = () => {
   const [recommendedPolicies, setRecommendedPolicies] = useState([]);
 
   // 즐겨찾기(기존 구조 유지)
-  const [favoriteWelfares, setFavoriteWelfares] = useState([
-    {
-      id: 1,
-      name: "청년도약계좌",
-      description: "청년층의 자산 형성을 지원하는 적금 상품",
-      icon: "💰",
-      status: "신청 가능",
-    },
-    {
-      id: 2,
-      name: "청년 전세자금 대출",
-      description: "만 34세 이하 청년층 대상 전세자금 지원",
-      icon: "🏠",
-      status: "신청 완료",
-    },
-    {
-      id: 3,
-      name: "국민취업지원제도",
-      description: "취업취약계층 및 청년층 취업지원 서비스",
-      icon: "💼",
-      status: "신청 가능",
-    },
-  ]);
+  const [favoriteWelfares, setFavoriteWelfares] = useState([]);
 
   const [previousRecords] = useState([
     {
