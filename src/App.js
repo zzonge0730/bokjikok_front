@@ -11,7 +11,7 @@ const App = () => {
   const [userName, setUserName] = useState("");
   const [loginForm, setLoginForm] = useState({ id: "", password: "" });
   const [diagnosisDone, setDiagnosisDone] = useState(false);
-
+  const [alertMessage, setAlertMessage] = useState("");
   // ✅ env 우선 + 기본값 (기존 상수 유지)
   const API_BASE = process.env.REACT_APP_API_BASE || "https://bokjikok.onrender.com";
 
@@ -921,6 +921,12 @@ const App = () => {
       <LoginModal />
       <div className="main-content">
         <div className="page-header">
+          {alertMessage && (
+            <div className="alert-banner">
+              <p>{alertMessage}</p>
+              <button onClick={() => setAlertMessage("")}>&times;</button>
+            </div>
+          )}          
           <div className="header-content">
             {activeTab === "home" && (
               <>
