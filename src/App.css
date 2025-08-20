@@ -228,9 +228,20 @@
   margin-bottom: 0.5rem;
   position: relative;
   z-index: 2;
-  max-width: 100%; /* 최대 폭 제한 */
+  max-width: 320px; /* 최대 폭 제한 */
 }
 
+.form-container {
+  background-color: #f3f4f6;
+  border-radius: 1.5rem;
+  padding: 2rem;
+  margin-left: 1rem;
+  margin-right: 1rem;
+  margin-top: 1rem;
+  margin-bottom: 1rem;
+  position: relative;
+  box-shadow: -5px 0 0 #6fb4fd; /* 왼쪽 파란색 그림자 */
+}
 
 .form-wrapper {
   border: none;
@@ -238,14 +249,12 @@
   display: flex;
   flex-direction: column;
   gap: 0.75rem;
-  width: 100%;
-  max-width: 100%; /* 최대 폭 제한 */
 }
 
 .form-group {
   background-color: white;
   border-radius: 0.75rem;
-  padding: 1rem;
+  padding: 0.5rem;
   box-shadow: 0 1px 3px 0 rgba(0, 0, 0, 0.1);
 }
 
@@ -410,7 +419,65 @@
   box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1);
 }
 
+/* === 하단 네비게이션 === */
+.bottom-nav {
+  position: fixed;
+  bottom: 0;
+  left: 50%;
+  transform: translateX(-50%);
+  max-width: 400px;
+  width: 100%;
+  background-color: #2f3f53;
+  border-top: 1px solid #e5e7eb;
+  display: flex;
+  z-index: 30;
+  box-shadow: 0 -1px 3px 0 rgba(0, 0, 0, 0.1);
+}
 
+.nav-item {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.25rem;
+  padding: 0.75rem 0.5rem;
+  border: none;
+  background: none;
+  cursor: pointer;
+  transition: all 0.2s;
+  color: #6b7280;
+  min-height: 70px;
+}
+
+.nav-item .icon {
+  font-size: 1rem; /* 이모지 크기 */
+}
+
+.nav-item .label {
+  font-size: 0.7rem; /* 글자 크기 */
+  font-weight: 500;
+}
+
+/* 실제 배경은 내부 박스에만 적용 */
+.nav-item .active-box {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.25rem;
+  padding: 0.3rem 0.6rem; /* 여기 크기로 조절 */
+  border-radius: 8px;
+}
+
+.nav-item.active .active-box {
+  background-color: #71a1e8;
+  color: #ffffff;
+  border-radius: 12px; /* 모서리 둥글게 (원하면) */
+}
+
+.nav-item span {
+  font-size: 0.75rem;
+  font-weight: 500;
+}
 
 /* === 반응형 조정 === */
 @media (max-width: 640px) {
@@ -891,155 +958,4 @@ html {
 
 .new-diagnosis-btn:hover {
   background: #2563eb;
-}
-.policy-card-container {
-  display: grid;
-  gap: 12px;
-  margin-top: 10px;
-}
-
-.policy-card {
-  background: #f9f9ff;
-  border: 1px solid #ddd;
-  border-radius: 10px;
-  padding: 12px;
-}
-
-.apply-btn {
-  margin-top: 8px;
-  background: #4a6cf7;
-  color: #fff;
-  border: none;
-  padding: 6px 12px;
-  border-radius: 6px;
-  cursor: pointer;
-}
-
-.policy-card .deadline {
-  margin-top: 6px;
-  font-size: 14px;
-  color: #d9534f; /* 붉은 계열 */
-  font-weight: bold;
-  display: flex;
-  align-items: center;
-}
-
-.policy-card .deadline::before {
-  content: "⏰ ";
-  margin-right: 4px;
-}
-
-
-/* 제목 */
-h1, h3, h4 {
-  margin: 12px 0;
-}
-
-/* 입력 폼 */
-.form-group {
-  margin-bottom: 12px;
-}
-
-.form-group label {
-  display: block;
-  margin-bottom: 4px;
-  font-weight: bold;
-}
-
-.form-group input,
-.form-group select {
-  width: 100%;
-  padding: 8px;
-  border: 1px solid #ddd;
-  border-radius: 6px;
-  font-size: 14px;
-}
-
-button {
-  padding: 8px 12px;
-  margin-top: 8px;
-  background: #007bff;
-  border: none;
-  border-radius: 6px;
-  color: white;
-  font-size: 14px;
-  cursor: pointer;
-}
-
-button:disabled {
-  background: #ccc;
-  cursor: not-allowed;
-}
-
-/* 카드 컨테이너 */
-.policy-card-container {
-  display: grid;
-  gap: 12px;
-  margin-top: 16px;
-}
-
-.policy-card {
-  border: 1px solid #eee;
-  border-radius: 8px;
-  padding: 12px;
-  background: #fafafa;
-  box-shadow: 0 2px 4px rgba(0,0,0,0.05);
-}
-
-.policy-card h4 {
-  margin-bottom: 4px;
-  font-size: 16px;
-}
-
-.policy-card p {
-  margin: 4px 0;
-  font-size: 14px;
-}
-
-.bottom-nav {
-  position: fixed;
-  bottom: 0;
-  left: 50%;
-  transform: translateX(-50%);
-  width: 100%;
-  max-width: 400px; /* 메인 콘텐츠의 최대 폭과 동일하게 */
-  background: white;
-  border-top: 1px solid #ddd;
-  display: flex;
-  justify-content: space-around;
-  padding: 8px 0;
-  z-index: 100;
-}
-
-
-
-.bottom-nav button {
-  background: none;
-  border: none;
-  color: #333;
-  font-size: 13px;
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-}
-
-.bottom-nav button svg {
-  margin-bottom: 2px;
-}
-
-
-/* 모달 */
-.modal {
-  position: fixed;
-  top: 50%;
-  left: 50%;
-  transform: translate(-50%, -50%);
-  background: white;
-  border: 1px solid #ddd;
-  border-radius: 8px;
-  padding: 20px;
-  box-shadow: 0 4px 12px rgba(0,0,0,0.2);
-  z-index: 200;
-  width: 90%;
-  max-width: 400px;
 }

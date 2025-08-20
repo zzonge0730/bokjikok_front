@@ -1,37 +1,41 @@
 import React, { useState } from "react";
-import { useEffect } from "react"; // 이미 있다면 생략
 import { Home, FileText, Target, Calendar, Search, X } from "lucide-react";
 import "./App.css";
-import MyPage from "./MyPage";
+
 const App = () => {
   const [activeTab, setActiveTab] = useState("home");
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [showLoginModal, setShowLoginModal] = useState(false);
   const [chatInput, setChatInput] = useState("");
   const [isLoggedIn, setIsLoggedIn] = useState(false);
-  const [hasSubmittedConditions, setHasSubmittedConditions] = useState(false);
-  useEffect(() => {
-    if (hasSubmittedConditions) {
-      setActiveTab("result");
-    }
-  }, [hasSubmittedConditions]);
- // App 컴포넌트 상단에 추가
-  const [favoritePolicies, setFavoritePolicies] = useState([]);
-  const toggleFavorite = (policy) => {
-  const exists = favoritePolicies.find((item) => item.title === policy.title);
-  if (exists) {
-    setFavoritePolicies((prev) =>
-      prev.filter((item) => item.title !== policy.title)
-    );
-  } else {
-    setFavoritePolicies((prev) => [...prev, policy]);
-  }
-};
-
-  const [showApplyModal, setShowApplyModal] = useState(false);
-  const [selectedPolicy, setSelectedPolicy] = useState(null);
   const [userName, setUserName] = useState("");
   const [loginForm, setLoginForm] = useState({ id: "", password: "" });
+  const API_BASE = "https://bokjikok.onrender.com";
+  // 즐겨찾기 상태 추가
+  const [favoriteWelfares, setFavoriteWelfares] = useState([
+    {
+      id: 1,
+      name: "청년도약계좌",
+      description: "청년층의 자산 형성을 지원하는 적금 상품",
+      icon: "💰",
+      status: "신청 가능",
+    },
+    {
+      id: 2,
+      name: "청년 전세자금 대출",
+      description: "만 34세 이하 청년층 대상 전세자금 지원",
+      icon: "🏠",
+      status: "신청 완료",
+    },
+    {
+      id: 3,
+      name: "국민취업지원제도",
+      description: "취업취약계층 및 청년층 취업지원 서비스",
+      icon: "💼",
+      status: "신청 가능",
+    },
+  ]);
+
   const [previousRecords] = useState([
     {
       id: 1,
@@ -57,6 +61,7 @@ const App = () => {
       ],
     },
   ]);
+
   const [chatMessages, setChatMessages] = useState([
     {
       id: 1,
@@ -65,20 +70,19 @@ const App = () => {
         "안녕하세요! 복지콕 AI 상담봇입니다. 궁금한 복지 혜택에 대해 질문해주세요! 😊",
     },
   ]);
+
   const [formData, setFormData] = useState({
     age: "",
     income: "",
     job: "",
   });
 
-  // App 컴포넌트 내부, handleTabChange 함수 근처에 추가
   const handleLogin = () => {
-    // 간단한 더미 로그인 (실제로는 서버 인증 필요)
     if (loginForm.id && loginForm.password) {
       setIsLoggedIn(true);
       setUserName(loginForm.id);
       setShowLoginModal(false);
-      setActiveTab("history"); // 로그인 후 기록 페이지로 이동
+      setActiveTab("history");
       setLoginForm({ id: "", password: "" });
     }
   };
@@ -94,58 +98,43 @@ const App = () => {
   };
 
   const handleTabChange = (tabId) => {
-    // 홈으로 가면 모든 조건 초기화
-    if (tabId === "home") {
-      setHasSubmittedConditions(false); // 제출 여부 리셋
-      setFormData({ age: "", income: "", job: "" }); // ✅ 조건 입력값 초기화
-    }
-
-    // 마이페이지는 조건을 입력했을 때만 접근 가능
-    if (tabId === "result" && !hasSubmittedConditions) {
-      alert("진단 조건을 먼저 입력해주세요 😊");
-      setActiveTab("check");
-      return;
-    }
-
     setActiveTab(tabId);
   };
-
-
 
   const handleSendMessage = async () => {
     if (!chatInput.trim()) return;
 
-    const newUserMessage = { id: Date.now(), type: "user", message: chatInput };
+    const newUserMessage = {
+      id: Date.now(),
+      type: "user",
+      message: chatInput,
+    };
     setChatMessages((prev) => [...prev, newUserMessage]);
     const currentInput = chatInput;
     setChatInput("");
 
     try {
-      const API_URL = process.env.REACT_APP_API_URL || "";
-      const res = await fetch(`${API_URL}/chat`, {
+      const res = await fetch(`${API_BASE}/chat`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ message: chatInput }),
+        body: JSON.stringify({ message: currentInput }),
       });
       const data = await res.json();
 
-      // 🗨️ 1. GPT 자연어 답변 (말풍선)
-      if (data.reply) {
-        setChatMessages((prev) => [
-          ...prev,
-          { id: Date.now(), type: "bot", message: data.reply }
-        ]);
-      }
-
-      // 🃏 2. 정책 카드 (항상 최신으로 교체)
-      if (data.policies) {
-        setChatMessages((prev) => [
-          ...prev.filter((msg) => msg.type !== "policy"), // 기존 카드 지우고
-          { id: Date.now() + 1, type: "policy", policies: data.policies }
-        ]);
-      }
-    } catch (error) {
-      console.error("❌ Chat API error:", error);
+      const botResponse = {
+        id: Date.now() + 1,
+        type: "bot",
+        message: data.reply || "응답을 불러올 수 없습니다.",
+      };
+      setChatMessages((prev) => [...prev, botResponse]);
+    } catch (err) {
+      console.error(err);
+      const botResponse = {
+        id: Date.now() + 1,
+        type: "bot",
+        message: "❌ 서버 오류로 응답을 가져올 수 없습니다.",
+      };
+      setChatMessages((prev) => [...prev, botResponse]);
     }
   };
 
@@ -168,14 +157,12 @@ const App = () => {
     return "죄송합니다. 해당 질문에 대한 정확한 답변을 드리기 어려워요. 😅\n\n다음과 같은 키워드로 질문해보세요:\n• 청년 지원\n• 주거 지원\n• 교육비 지원\n• 취업 지원\n\n더 구체적인 상황을 알려주시면 맞춤형 안내를 해드릴 수 있어요!";
   };
 
-  // 메뉴 아이템
   const menuItems = [
     { id: "home", label: "홈", icon: "🏠" },
     { id: "check", label: "진단", icon: "📝" },
     { id: "result", label: "마이페이지", icon: "👤" },
   ];
 
-  // 메인 페이지 (복지 진단 소개)
   const renderHome = () => (
     <div className="home-content">
       <div className="welfare-intro">
@@ -208,7 +195,6 @@ const App = () => {
           복지 진단 시작하기
         </button>
 
-        {/* 로그인 섹션 추가 */}
         <div className="login-section">
           {isLoggedIn ? (
             <div className="user-info-section">
@@ -265,174 +251,587 @@ const App = () => {
     </div>
   );
 
-  // 조건 입력 페이지
-  const renderCheck = () => (
-    <div className="check-content">
-      <div className="form-container">
-        <div className="form-wrapper">
-          <div className="form-group">
-            <div className="form-label">
-              <span>👤</span>
-              <label>나이</label>
-            </div>
-            <input
-              type="text"
-              placeholder="만 나이를 입력하세요"
-              value={formData.age}
-              onChange={(e) => handleInputChange("age", e.target.value)}
-              className="form-input"
-            />
-          </div>
+  const renderCheck = () => {
+    const validateForm = () => {
+      const errors = [];
 
-          <div className="form-group">
-            <div className="form-label">
-              <span>💰</span>
-              <label>월 소득 (만원)</label>
-            </div>
-            <input
-              type="text"
-              placeholder="월 소득을 입력하세요"
-              value={formData.income}
-              onChange={(e) => handleInputChange("income", e.target.value)}
-              className="form-input"
-            />
-          </div>
+      if (!formData.age || formData.age.trim() === "") {
+        errors.push("나이를 입력해주세요");
+      } else if (
+        isNaN(formData.age) ||
+        parseInt(formData.age) < 0 ||
+        parseInt(formData.age) > 120
+      ) {
+        errors.push("올바른 나이를 입력해주세요 (0-120)");
+      }
 
-          <div className="form-group">
-            <div className="form-label">
-              <span>💼</span>
-              <label>직업</label>
+      if (!formData.income || formData.income.trim() === "") {
+        errors.push("월 소득을 입력해주세요");
+      } else if (isNaN(formData.income) || parseInt(formData.income) < 0) {
+        errors.push("올바른 월 소득을 입력해주세요");
+      }
+
+      if (!formData.job || formData.job === "") {
+        errors.push("직업을 선택해주세요");
+      }
+
+      return errors;
+    };
+
+    const handleDiagnosis = async () => {
+      const errors = validateForm();
+      if (errors.length > 0) {
+        alert(errors.join("\n"));
+        return;
+      }
+
+      try {
+        const res = await fetch(`${API_BASE}/diagnosis`, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify(formData),
+        });
+        const data = await res.json();
+
+        if (res.ok) {
+          console.log("✅ 진단 성공:", data);
+          // TODO: 받은 데이터를 diagnosis 결과 state에 저장
+          handleTabChange("diagnosis");
+        } else {
+          alert(data.error || "진단 요청 실패");
+        }
+      } catch (err) {
+        console.error(err);
+        alert("서버와 통신 중 오류가 발생했습니다.");
+      }
+    };
+
+
+    const hasAgeError = () => {
+      return (
+        formData.age &&
+        (isNaN(formData.age) ||
+          parseInt(formData.age) < 0 ||
+          parseInt(formData.age) > 120)
+      );
+    };
+
+    const hasIncomeError = () => {
+      return (
+        formData.income &&
+        (isNaN(formData.income) || parseInt(formData.income) < 0)
+      );
+    };
+
+    const isFormValid = () => {
+      return (
+        formData.age &&
+        formData.income &&
+        formData.job &&
+        !hasAgeError() &&
+        !hasIncomeError()
+      );
+    };
+
+    return (
+      <div className="check-content">
+        <div className="form-container">
+          <div className="form-wrapper">
+            <div className="form-group">
+              <div className="form-label">
+                <span>👤</span>
+                <label>나이</label>
+              </div>
+              <input
+                type="text"
+                placeholder="나이를 입력하세요"
+                value={formData.age}
+                onChange={(e) => handleInputChange("age", e.target.value)}
+                className="form-input"
+                style={{
+                  borderColor: hasAgeError() ? "#ef4444" : "#d1d5db",
+                  borderWidth: hasAgeError() ? "2px" : "1px",
+                }}
+              />
+              {hasAgeError() && (
+                <div
+                  style={{
+                    color: "#ef4444",
+                    fontSize: "0.75rem",
+                    marginTop: "0.5rem",
+                    marginLeft: "0.25rem",
+                    display: "flex",
+                    alignItems: "center",
+                    gap: "0.25rem",
+                  }}
+                >
+                  <span>⚠️</span>
+                  올바른 나이를 입력해주세요 (0-120)
+                </div>
+              )}
             </div>
-            <select
-              value={formData.job}
-              onChange={(e) => handleInputChange("job", e.target.value)}
-              className="form-select"
+
+            <div className="form-group">
+              <div className="form-label">
+                <span>💰</span>
+                <label>월 소득 (만원)</label>
+              </div>
+              <input
+                type="text"
+                placeholder="월 소득을 입력하세요"
+                value={formData.income}
+                onChange={(e) => handleInputChange("income", e.target.value)}
+                className="form-input"
+                style={{
+                  borderColor: hasIncomeError() ? "#ef4444" : "#d1d5db",
+                  borderWidth: hasIncomeError() ? "2px" : "1px",
+                }}
+              />
+              {hasIncomeError() && (
+                <div
+                  style={{
+                    color: "#ef4444",
+                    fontSize: "0.75rem",
+                    marginTop: "0.5rem",
+                    marginLeft: "0.25rem",
+                    display: "flex",
+                    alignItems: "center",
+                    gap: "0.25rem",
+                  }}
+                >
+                  <span>⚠️</span>
+                  올바른 월 소득을 입력해주세요
+                </div>
+              )}
+            </div>
+
+            <div className="form-group">
+              <div className="form-label">
+                <span>💼</span>
+                <label>직업</label>
+              </div>
+              <select
+                value={formData.job}
+                onChange={(e) => handleInputChange("job", e.target.value)}
+                className="form-select"
+              >
+                <option value="">직업을 선택하세요</option>
+                <option value="student">학생</option>
+                <option value="jobseeker">구직자</option>
+                <option value="employee">직장인</option>
+                <option value="freelancer">프리랜서</option>
+                <option value="entrepreneur">창업자</option>
+              </select>
+            </div>
+
+            <button
+              onClick={handleDiagnosis}
+              className="diagnosis-button"
+              style={{
+                backgroundColor: !isFormValid() ? "#9ca3af" : "#22d3ee",
+                cursor: !isFormValid() ? "not-allowed" : "pointer",
+                opacity: !isFormValid() ? 0.7 : 1,
+              }}
+              disabled={!isFormValid()}
             >
-              <option value="">직업을 선택하세요</option>
-              <option value="student">학생</option>
-              <option value="jobseeker">구직자</option>
-              <option value="employee">직장인</option>
-              <option value="freelancer">프리랜서</option>
-              <option value="entrepreneur">창업자</option>
-            </select>
+              <Search size={20} />
+              {!isFormValid() ? "모든 정보를 입력해주세요" : "진단 시작하기"}
+            </button>
+
+            <div
+              className="benefits-section"
+              style={{
+                marginTop: "1rem",
+                backgroundColor: "#fef3c7",
+                border: "1px solid #fbbf24",
+                padding: "1rem",
+              }}
+            >
+              <div
+                className="benefits-header"
+                style={{ marginBottom: "0.5rem" }}
+              >
+                <span style={{ fontSize: "1.25rem" }}>⚠️</span>
+                <h3
+                  style={{
+                    fontSize: "0.875rem",
+                    color: "#92400e",
+                    margin: 0,
+                  }}
+                >
+                  입력 안내
+                </h3>
+              </div>
+              <div
+                style={{
+                  fontSize: "0.75rem",
+                  color: "#92400e",
+                  lineHeight: "1.4",
+                }}
+              >
+                정확한 복지 혜택 진단을 위해 모든 정보를 정확히 입력해주세요.
+              </div>
+            </div>
           </div>
-
-          <button
-            onClick={() => {
-              if (!formData.age || !formData.income || !formData.job) {
-                alert("나이, 소득, 직업을 모두 입력해주세요 😊");
-                return;
-              }
-              setHasSubmittedConditions(true);
-            }}
-            className="diagnosis-button"
-            disabled={!formData.age || !formData.income || !formData.job}
-          >
-            <Search size={20} />
-            진단 시작하기
-          </button>
-
-
         </div>
       </div>
-    </div>
-  );
+    );
+  };
 
- 
-  // 마이페이지 (AI 상담)
-  const renderResult = () => (
-    <div className="result-content">
-      <div className="chat-section">
-        <h3>🤖 AI 복지 상담</h3>
-        {/* 1. 채팅 대화 영역 */}
-        <div className="chat-container">
-          {chatMessages
-            .filter((msg) => msg.type === "bot" || msg.type === "user")
-            .map((msg) => (
-              <div key={msg.id} className={`chat-message ${msg.type}`}>
-                {msg.message.split("\n").map((line, i) => (
-                  <div key={i}>{line}</div>
+  const renderDiagnosisResult = () => {
+    const allResults = [
+      {
+        id: 1,
+        name: "청년도약계좌",
+        description:
+          "청년층의 자산 형성을 지원하는 적금 상품으로, 월 70만원까지 납입 가능하며 정부지원금이 추가됩니다.",
+        icon: "💰",
+        status: "신청 가능",
+        deadline: "2024.12.31",
+        benefits: [
+          "월 최대 70만원 납입",
+          "정부지원금 월 6만원",
+          "만기 시 최대 5,000만원",
+        ],
+      },
+      {
+        id: 2,
+        name: "청년 전세자금 대출",
+        description:
+          "만 34세 이하 청년층을 대상으로 한 전세자금 지원 프로그램입니다.",
+        icon: "🏠",
+        status: "신청 가능",
+        deadline: "상시 접수",
+        benefits: ["최대 2억원 대출", "연 1.8~2.4% 금리", "최대 30년 상환"],
+      },
+      {
+        id: 3,
+        name: "국민취업지원제도",
+        description:
+          "취업취약계층 및 청년층을 위한 맞춤형 취업지원 서비스를 제공합니다.",
+        icon: "💼",
+        status: "신청 가능",
+        deadline: "2024.11.30",
+        benefits: ["월 50만원 구직급여", "취업성공패키지", "직업훈련 지원"],
+      },
+    ];
+
+    const diagnosisResults = allResults.filter(
+      (item) => item.status === "신청 가능"
+    );
+
+    const handleAddToFavorites = (welfare) => {
+      const isAlreadyFavorite = favoriteWelfares.some(
+        (item) => item.id === welfare.id
+      );
+
+      if (isAlreadyFavorite) {
+        alert(`"${welfare.name}"은(는) 이미 즐겨찾기에 있습니다.`);
+        return;
+      }
+
+      setFavoriteWelfares((prev) => [...prev, welfare]);
+      alert(`"${welfare.name}"이(가) 즐겨찾기에 추가되었습니다!`);
+    };
+
+    const getStatusStyle = (status) => {
+      if (status === "신청 가능") {
+        return { backgroundColor: "#dcfce7", color: "#166534" };
+      } else if (status === "신청 완료") {
+        return { backgroundColor: "#dbeafe", color: "#1e40af" };
+      } else {
+        return { backgroundColor: "#fee2e2", color: "#dc2626" };
+      }
+    };
+
+    return (
+      <div className="result-content">
+        <div
+          className="benefits-section"
+          style={{
+            marginBottom: "1.5rem",
+            backgroundColor: "#f0f9ff",
+            border: "1px solid #bae6fd",
+          }}
+        >
+          <div className="benefits-header">
+            <span style={{ fontSize: "1.5rem" }}>🎯</span>
+            <h3 style={{ margin: 0, color: "#0369a1" }}>복지 혜택 진단 결과</h3>
+          </div>
+          <div
+            style={{
+              fontSize: "0.875rem",
+              color: "#0369a1",
+              lineHeight: "1.5",
+            }}
+          >
+            입력하신 정보를 바탕으로 {diagnosisResults.length}개의 신청 가능한
+            복지 혜택을 찾았습니다.
+          </div>
+        </div>
+
+        <div className="result-list">
+          {diagnosisResults.map((welfare) => (
+            <div key={welfare.id} className="welfare-card">
+              <div className="welfare-header">
+                <div className="welfare-icon">{welfare.icon}</div>
+                <div className="welfare-info">
+                  <h3 style={{ margin: "0 0 0.75rem 0", fontSize: "1.125rem" }}>
+                    {welfare.name}
+                  </h3>
+
+                  <p
+                    style={{
+                      margin: "0 0 0.75rem 0",
+                      fontSize: "0.875rem",
+                      color: "#6b7280",
+                      lineHeight: "1.5",
+                    }}
+                  >
+                    {welfare.description}
+                  </p>
+
+                  <div style={{ marginBottom: "0.75rem" }}>
+                    <div
+                      style={{
+                        fontSize: "0.75rem",
+                        fontWeight: "600",
+                        color: "#374151",
+                        marginBottom: "0.25rem",
+                      }}
+                    >
+                      주요 혜택:
+                    </div>
+                    {welfare.benefits.map((benefit, index) => (
+                      <div
+                        key={index}
+                        style={{
+                          fontSize: "0.75rem",
+                          color: "#6b7280",
+                          marginLeft: "0.5rem",
+                          marginBottom: "0.125rem",
+                        }}
+                      >
+                        • {benefit}
+                      </div>
+                    ))}
+                  </div>
+
+                  <div
+                    style={{
+                      display: "flex",
+                      gap: "0.5rem",
+                    }}
+                  >
+                    <button
+                      onClick={() => handleAddToFavorites(welfare)}
+                      style={{
+                        width: "100%",
+                        backgroundColor: "#22c55e",
+                        color: "white",
+                        border: "none",
+                        padding: "0.5rem 1rem",
+                        borderRadius: "0.5rem",
+                        fontSize: "0.875rem",
+                        fontWeight: "500",
+                        cursor: "pointer",
+                        transition: "background-color 0.2s",
+                        display: "flex",
+                        alignItems: "center",
+                        justifyContent: "center",
+                        gap: "0.5rem",
+                      }}
+                      onMouseOver={(e) =>
+                        (e.target.style.backgroundColor = "#16a34a")
+                      }
+                      onMouseOut={(e) =>
+                        (e.target.style.backgroundColor = "#22c55e")
+                      }
+                    >
+                      ⭐ 즐겨찾기 추가
+                    </button>
+                  </div>
+                </div>
+              </div>
+            </div>
+          ))}
+        </div>
+
+        <button
+          onClick={() => handleTabChange("check")}
+          className="retry-button"
+          style={{ marginTop: "1.5rem" }}
+        >
+          🔄 다시 진단하기
+        </button>
+
+        <div
+          className="benefits-section"
+          style={{
+            marginTop: "1rem",
+            backgroundColor: "#fef3c7",
+            border: "1px solid #fbbf24",
+          }}
+        >
+          <div className="benefits-header" style={{ marginBottom: "0.5rem" }}>
+            <span style={{ fontSize: "1.25rem" }}>💡</span>
+            <h3
+              style={{
+                fontSize: "0.875rem",
+                color: "#92400e",
+                margin: 0,
+              }}
+            >
+              진단 결과 안내
+            </h3>
+          </div>
+          <div
+            style={{
+              fontSize: "0.75rem",
+              color: "#92400e",
+              lineHeight: "1.4",
+            }}
+          >
+            위 결과는 신청 가능한 복지 혜택만을 표시한 것입니다.
+            <br />
+            각 혜택의 신청 조건을 자세히 확인하신 후 신청해 주세요.
+            <br />
+            혜택에 따라 추가 서류나 심사가 필요할 수 있습니다.
+          </div>
+        </div>
+      </div>
+    );
+  };
+
+  const renderResult = () => {
+    const handleRemoveFavorite = (id) => {
+      setFavoriteWelfares((prev) => prev.filter((item) => item.id !== id));
+    };
+
+    return (
+      <div className="result-content">
+        <div className="chat-section" style={{ marginBottom: "1.5rem" }}>
+          <h3>⭐ 즐겨찾기</h3>
+
+          {favoriteWelfares.length > 0 ? (
+            <div className="result-list">
+              {favoriteWelfares.map((welfare) => (
+                <div key={welfare.id} className="welfare-card">
+                  <div className="welfare-header">
+                    <div className="welfare-icon">{welfare.icon}</div>
+                    <div className="welfare-info">
+                      <h3>{welfare.name}</h3>
+                      <p>{welfare.description}</p>
+
+                      <div
+                        style={{
+                          display: "flex",
+                          alignItems: "center",
+                          gap: "0.5rem",
+                          marginBottom: "0.75rem",
+                        }}
+                      >
+                        <span
+                          className={`status ${welfare.status.replace(
+                            " ",
+                            "\\ "
+                          )}`}
+                        >
+                          {welfare.status}
+                        </span>
+                      </div>
+
+                      <div
+                        style={{
+                          display: "flex",
+                          gap: "0.5rem",
+                          marginTop: "0.75rem",
+                        }}
+                      >
+                        <button
+                          onClick={() => handleRemoveFavorite(welfare.id)}
+                          style={{
+                            width: "100%",
+                            backgroundColor: "#ef4444",
+                            color: "white",
+                            border: "none",
+                            padding: "0.5rem 1rem",
+                            borderRadius: "0.5rem",
+                            fontSize: "0.875rem",
+                            fontWeight: "500",
+                            cursor: "pointer",
+                            transition: "background-color 0.2s",
+                            display: "flex",
+                            alignItems: "center",
+                            justifyContent: "center",
+                            gap: "0.5rem",
+                          }}
+                          onMouseOver={(e) =>
+                            (e.target.style.backgroundColor = "#dc2626")
+                          }
+                          onMouseOut={(e) =>
+                            (e.target.style.backgroundColor = "#ef4444")
+                          }
+                        >
+                          삭제하기
+                        </button>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              ))}
+            </div>
+          ) : (
+            <div
+              style={{
+                textAlign: "center",
+                padding: "2rem 1rem",
+                backgroundColor: "white",
+                borderRadius: "0.75rem",
+                border: "1px solid #e5e7eb",
+                color: "#6b7280",
+              }}
+            >
+              <div style={{ fontSize: "3rem", marginBottom: "1rem" }}>⭐</div>
+              <p style={{ marginBottom: "0.5rem", fontWeight: "500" }}>
+                아직 즐겨찾기한 복지가 없습니다
+              </p>
+              <p style={{ fontSize: "0.875rem" }}>
+                복지 검색에서 관심있는 혜택을 즐겨찾기로 저장해보세요
+              </p>
+            </div>
+          )}
+        </div>
+
+        <div className="chat-section">
+          <h3>🤖 AI 복지 상담</h3>
+          <div className="chat-container">
+            {chatMessages.map((message) => (
+              <div key={message.id} className={`chat-message ${message.type}`}>
+                {message.message.split("\n").map((line, index) => (
+                  <div key={index}>{line}</div>
                 ))}
               </div>
             ))}
-        </div>
-
-        {/* 2. 정책 카드 영역 - 대화와 분리 */}
-        <div className="policy-card-container">
-          {chatMessages
-            .filter((msg) => msg.type === "policy")
-            .flatMap((msg) => msg.policies)
-            .map((p, i) => (
-              <div key={i} className="policy-card">
-                <div className="card-header">
-                  <h4>{p.title}</h4>
-                  <button
-                    className="favorite-btn"
-                    onClick={() => toggleFavorite(p)}
-                  >
-                    {favoritePolicies.find((f) => f.title === p.title) ? "★" : "☆"}
-                  </button>
-                </div>
-                <p>{p.description}</p>
-                {p.deadline && (
-                  <p className="deadline">📅 마감일: {p.deadline}</p>
-                )}
-                <button
-                  className="apply-btn"
-                  onClick={() => {
-                    setSelectedPolicy(p.title);
-                    setShowApplyModal(true);
-                  }}
-                >
-                  신청하기
-                </button>
-              </div>
-
-            ))}
-        </div>
-
-        <div className="chat-input-container">
-          <input
-            type="text"
-            placeholder="복지 혜택에 대해 질문해보세요..."
-            value={chatInput}
-            onChange={(e) => setChatInput(e.target.value)}
-            onKeyPress={(e) => e.key === "Enter" && handleSendMessage()}
-            className="chat-input"
-          />
-          <button onClick={handleSendMessage} className="send-button">
-            📤
-          </button>
+          </div>
+          <div className="chat-input-container">
+            <input
+              type="text"
+              placeholder="복지 혜택에 대해 질문해보세요..."
+              value={chatInput}
+              onChange={(e) => setChatInput(e.target.value)}
+              onKeyPress={(e) => e.key === "Enter" && handleSendMessage()}
+              className="chat-input"
+            />
+            <button onClick={handleSendMessage} className="send-button">
+              📤
+            </button>
+          </div>
         </div>
       </div>
-        {/* ⭐ 즐겨찾기 리스트 추가 */}
-        {favoritePolicies.length > 0 && (
-          <div className="favorite-list">
-            <h4>⭐ 즐겨찾기한 정책</h4>
-            {favoritePolicies.map((fav, i) => (
-              <div key={i} className="policy-card">
-                <h4>{fav.title}</h4>
-                <p>{fav.description}</p>
-                {fav.deadline && <p className="deadline">📅 마감일: {fav.deadline}</p>}
-                <button
-                  className="apply-btn"
-                  onClick={() => {
-                    setSelectedPolicy(fav.title);
-                    setShowApplyModal(true);
-                  }}
-                >
-                  신청하기
-                </button>
-              </div>
-            ))}
-          </div>
-        )}
+    );
+  };
 
-    </div>
-  );
-
-
-  // 이전 기록 페이지
   const renderHistory = () => (
     <div className="result-content">
       <div className="history-header">
@@ -475,41 +874,7 @@ const App = () => {
       </button>
     </div>
   );
-  // 신청 모달
-  const ApplyModal = () =>
-    showApplyModal && (
-      <>
-        <div
-          className="modal-overlay"
-          onClick={() => setShowApplyModal(false)}
-        />
-        <div className="login-modal">
-          <div className="login-modal-content">
-            <div className="modal-header">
-              <h3>신청 안내</h3>
-              <button
-                onClick={() => setShowApplyModal(false)}
-                className="close-btn"
-              >
-                ✕
-              </button>
-            </div>
-            <p>
-              <strong>{selectedPolicy}</strong> 신청 기능은 현재 데모 버전에서는 준비
-              중입니다 🙏
-            </p>
-            <button
-              onClick={() => setShowApplyModal(false)}
-              className="login-btn"
-            >
-              확인
-            </button>
-          </div>
-        </div>
-      </>
-    );
 
-  // 로그인 모달
   const LoginModal = () =>
     showLoginModal && (
       <>
@@ -579,6 +944,8 @@ const App = () => {
         return renderHome();
       case "check":
         return renderCheck();
+      case "diagnosis":
+        return renderDiagnosisResult();
       case "history":
         return renderHistory();
       case "result":
@@ -587,14 +954,11 @@ const App = () => {
         return renderHome();
     }
   };
+
   return (
     <div className="app">
       <LoginModal />
-      <ApplyModal />
-
-      {/* 메인 콘텐츠 영역 */}
       <div className="main-content">
-        {/* 페이지 헤더 */}
         <div className="page-header">
           <div className="header-content">
             {activeTab === "home" && (
@@ -609,6 +973,12 @@ const App = () => {
                 <h1>조건 입력</h1>
               </>
             )}
+            {activeTab === "diagnosis" && (
+              <>
+                <span className="header-icon">🎯</span>
+                <h1>진단 결과</h1>
+              </>
+            )}
             {activeTab === "result" && (
               <>
                 <span className="header-icon">👤</span>
@@ -618,12 +988,8 @@ const App = () => {
           </div>
         </div>
 
-        {/* 메인 콘텐츠 */}
         <main className="content">{renderContent()}</main>
-      </div>
 
-      {/* ✅ 하단 네비게이션: 홈에서는 안 보이게 */}
-      {activeTab !== "home" && (
         <div className="bottom-nav">
           {menuItems.map(({ id, label, icon }) => (
             <button
@@ -641,10 +1007,9 @@ const App = () => {
             </button>
           ))}
         </div>
-      )}
+      </div>
     </div>
   );
-
 };
 
 export default App;
