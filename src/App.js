@@ -302,7 +302,7 @@ const App = () => {
       }
 
       try {
-        const res = await fetch(`${API_BASE}/routes/diagnosis`, {
+        const res = await fetch(`${API_BASE}/diagnosis`, {
           method: "POST",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify(formData),
