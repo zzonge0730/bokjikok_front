@@ -240,7 +240,6 @@
   margin-top: 1rem;
   margin-bottom: 1rem;
   position: relative;
-  box-shadow: -5px 0 0 #6fb4fd; /* 왼쪽 파란색 그림자 */
 }
 
 .form-wrapper {

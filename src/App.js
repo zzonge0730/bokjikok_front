@@ -276,7 +276,7 @@ const App = () => {
       const errors = [];
 
       if (!formData.age || formData.age.trim() === "") {
-        errors.push("나이를 입력해주세요");
+        errors.push("만 나이를 입력해주세요");
       } else if (isNaN(formData.age) || parseInt(formData.age) < 0 || parseInt(formData.age) > 120) {
         errors.push("올바른 나이를 입력해주세요 (0-120)");
       }
@@ -920,7 +920,7 @@ const App = () => {
             {activeTab === "home" && (
               <>
                 <span className="header-icon">🏛️</span>
-                <h1>대한민국 복지 진단</h1>
+                <h1>복지콕 : 대한민국 복지 진단</h1>
               </>
             )}
             {activeTab === "check" && (
