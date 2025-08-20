@@ -10,9 +10,14 @@ const App = () => {
   const [isLoggedIn, setIsLoggedIn] = useState(false);
   const [userName, setUserName] = useState("");
   const [loginForm, setLoginForm] = useState({ id: "", password: "" });
-  const API_BASE = "https://bokjikok.onrender.com";
+
+  // ✅ env 우선 + 기본값 (기존 상수 유지)
+  const API_BASE = process.env.REACT_APP_API_BASE || "https://bokjikok.onrender.com";
+
+  // ✅ 서버 진단 결과 저장
   const [recommendedPolicies, setRecommendedPolicies] = useState([]);
-  // 즐겨찾기 상태 추가
+
+  // 즐겨찾기(기존 구조 유지)
   const [favoriteWelfares, setFavoriteWelfares] = useState([
     {
       id: 1,
@@ -43,23 +48,13 @@ const App = () => {
       date: "2025-01-15",
       results: [
         { title: "청년 월세 지원", amount: "월 20만원", status: "신청 가능" },
-        {
-          title: "청년 창업 지원금",
-          amount: "최대 500만원",
-          status: "신청 완료",
-        },
+        { title: "청년 창업 지원금", amount: "최대 500만원", status: "신청 완료" },
       ],
     },
     {
       id: 2,
       date: "2024-12-20",
-      results: [
-        {
-          title: "국가장학금 Ⅰ유형",
-          amount: "등록금 지원",
-          status: "신청 가능",
-        },
-      ],
+      results: [{ title: "국가장학금 Ⅰ유형", amount: "등록금 지원", status: "신청 가능" }],
     },
   ]);
 
@@ -67,8 +62,7 @@ const App = () => {
     {
       id: 1,
       type: "bot",
-      message:
-        "안녕하세요! 복지콕 AI 상담봇입니다. 궁금한 복지 혜택에 대해 질문해주세요! 😊",
+      message: "안녕하세요! 복지콕 AI 상담봇입니다. 궁금한 복지 혜택에 대해 질문해주세요! 😊",
     },
   ]);
 
@@ -77,6 +71,44 @@ const App = () => {
     income: "",
     job: "",
   });
+
+  // =========================
+  // 🔧 유틸: 정책 -> 기존 welfare 카드 형태로 정규화
+  // =========================
+  const normalizePolicyToWelfare = (p) => {
+    // 서버/챗 응답의 다양한 키(title/name/benefits 등)를 기존 카드에 맞춤
+    const name = p.name || p.title || "정책";
+    const description = p.description || "";
+    const benefits = p.benefits || [];
+    const deadline = p.deadline || undefined;
+    // 간단 아이콘 매핑
+    const lower = `${name} ${description}`.toLowerCase();
+    const icon = lower.includes("주거") || lower.includes("전세") || lower.includes("월세") ? "🏠"
+               : lower.includes("취업") || lower.includes("일자리") ? "💼"
+               : lower.includes("학자") || lower.includes("교육") ? "🎓"
+               : "💰";
+    return {
+      id: p.id || `${name}-${deadline || ""}-${Math.random().toString(36).slice(2, 8)}`,
+      name,
+      description,
+      icon,
+      status: p.status || "신청 가능",
+      deadline,
+      benefits,
+    };
+  };
+
+  // ✅ 즐겨찾기 공통 추가(중복 방지: name 기준)
+  const addToFavoriteWelfares = (welfareLike) => {
+    const w = normalizePolicyToWelfare(welfareLike);
+    const exists = favoriteWelfares.some((item) => item.name === w.name);
+    if (exists) {
+      alert(`"${w.name}"은(는) 이미 즐겨찾기에 있습니다.`);
+      return;
+    }
+    setFavoriteWelfares((prev) => [...prev, w]);
+    alert(`"${w.name}"이(가) 즐겨찾기에 추가되었습니다!`);
+  };
 
   const handleLogin = () => {
     if (loginForm.id && loginForm.password) {
@@ -101,6 +133,7 @@ const App = () => {
   const handleTabChange = (tabId) => {
     setActiveTab(tabId);
   };
+
   const handleSendMessage = async () => {
     if (!chatInput.trim()) return;
 
@@ -111,30 +144,35 @@ const App = () => {
 
     try {
       const API_URL = process.env.REACT_APP_API_URL || "http://localhost:5000";
-      const res = await fetch(`${API_URL}/chat`, {   // ✅ 여기 수정됨
+      const res = await fetch(`${API_URL}/chat`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ message: chatInput }),
+        body: JSON.stringify({ message: currentInput }),
       });
       const data = await res.json();
 
-      // 🗨️ 1. GPT 자연어 답변 (말풍선)
       if (data.reply) {
+        setChatMessages((prev) => [...prev, { id: Date.now(), type: "bot", message: data.reply }]);
+      }
+
+      // ✅ 정책 카드 메시지 유지 (UI는 아래 renderResult에서 렌더)
+      if (data.policies) {
         setChatMessages((prev) => [
-          ...prev,
-          { id: Date.now(), type: "bot", message: data.reply }
+          ...prev.filter((msg) => msg.type !== "policy"),
+          { id: Date.now() + 1, type: "policy", policies: data.policies },
         ]);
       }
 
-      // 🃏 2. 정책 카드 (항상 최신으로 교체)
-      if (data.policies) {
-        setChatMessages((prev) => [
-          ...prev.filter((msg) => msg.type !== "policy"), // 기존 카드 지우고
-          { id: Date.now() + 1, type: "policy", policies: data.policies }
-        ]);
-      }
+      // (옵션) 정책이 왔는데 추천에도 반영하고 싶다면 아래 주석 해제
+      // if (data.policies?.length) setRecommendedPolicies(data.policies);
+
     } catch (error) {
       console.error("❌ Chat API error:", error);
+      // (옵션) 기본 답변 폴백
+      setChatMessages((prev) => [
+        ...prev,
+        { id: Date.now(), type: "bot", message: "잠시 오류가 발생했어요. 다시 시도해주세요 🙏" },
+      ]);
     }
   };
 
@@ -145,11 +183,7 @@ const App = () => {
       return "청년을 위한 다양한 지원 제도가 있어요! 주요 혜택으로는:\n\n1. 청년 월세 한시 특별지원 (월 20만원)\n2. 청년 구직활동 지원금\n3. 청년 내일채움공제\n4. 청년 전세자금 대출\n\n더 자세한 정보가 필요하시면 개인정보를 입력해서 맞춤 추천을 받아보세요! 😊";
     }
 
-    if (
-      message.includes("주거") ||
-      message.includes("월세") ||
-      message.includes("전세")
-    ) {
+    if (message.includes("주거") || message.includes("월세") || message.includes("전세")) {
       return "주거 관련 복지 혜택을 찾고 계시는군요! 🏠\n\n주요 주거 지원 제도:\n1. 청년 월세 한시 특별지원\n2. 신혼부부 전세자금 대출\n3. 주거급여 (임차급여)\n4. 기존주택 전세임대\n\n나이, 소득, 가족 상황에 따라 지원 조건이 다르니 개인정보를 입력하시면 더 정확한 추천을 받을 수 있어요!";
     }
 
@@ -167,11 +201,7 @@ const App = () => {
       <div className="welfare-intro">
         <div className="intro-icon">
           <div className="target-container">
-            <img
-              src="/target-icon.png"
-              alt="타겟 아이콘"
-              className="target-icon-image"
-            />
+            <img src="/target-icon.png" alt="타겟 아이콘" className="target-icon-image" />
           </div>
         </div>
 
@@ -186,10 +216,7 @@ const App = () => {
           <p>맞춤형 복지 정책을 추천해드립니다</p>
         </div>
 
-        <button
-          onClick={() => handleTabChange("check")}
-          className="start-button"
-        >
+        <button onClick={() => handleTabChange("check")} className="start-button">
           <span>🚀</span>
           복지 진단 시작하기
         </button>
@@ -203,18 +230,12 @@ const App = () => {
                   로그아웃
                 </button>
               </div>
-              <button
-                onClick={() => handleTabChange("history")}
-                className="history-button"
-              >
+              <button onClick={() => handleTabChange("history")} className="history-button">
                 📋 이전 진단 기록 보기
               </button>
             </div>
           ) : (
-            <button
-              onClick={() => setShowLoginModal(true)}
-              className="login-button"
-            >
+            <button onClick={() => setShowLoginModal(true)} className="login-button">
               <span>🔑</span>
               로그인해서 이전 기록 보기
             </button>
@@ -256,11 +277,7 @@ const App = () => {
 
       if (!formData.age || formData.age.trim() === "") {
         errors.push("나이를 입력해주세요");
-      } else if (
-        isNaN(formData.age) ||
-        parseInt(formData.age) < 0 ||
-        parseInt(formData.age) > 120
-      ) {
+      } else if (isNaN(formData.age) || parseInt(formData.age) < 0 || parseInt(formData.age) > 120) {
         errors.push("올바른 나이를 입력해주세요 (0-120)");
       }
 
@@ -294,7 +311,6 @@ const App = () => {
         setRecommendedPolicies(data.policies || []);
         if (res.ok) {
           console.log("✅ 진단 성공:", data);
-          // TODO: 받은 데이터를 diagnosis 결과 state에 저장
           handleTabChange("diagnosis");
         } else {
           alert(data.error || "진단 요청 실패");
@@ -305,31 +321,16 @@ const App = () => {
       }
     };
 
-
     const hasAgeError = () => {
-      return (
-        formData.age &&
-        (isNaN(formData.age) ||
-          parseInt(formData.age) < 0 ||
-          parseInt(formData.age) > 120)
-      );
+      return formData.age && (isNaN(formData.age) || parseInt(formData.age) < 0 || parseInt(formData.age) > 120);
     };
 
     const hasIncomeError = () => {
-      return (
-        formData.income &&
-        (isNaN(formData.income) || parseInt(formData.income) < 0)
-      );
+      return formData.income && (isNaN(formData.income) || parseInt(formData.income) < 0);
     };
 
     const isFormValid = () => {
-      return (
-        formData.age &&
-        formData.income &&
-        formData.job &&
-        !hasAgeError() &&
-        !hasIncomeError()
-      );
+      return formData.age && formData.income && formData.job && !hasAgeError() && !hasIncomeError();
     };
 
     return (
@@ -347,10 +348,7 @@ const App = () => {
                 value={formData.age}
                 onChange={(e) => handleInputChange("age", e.target.value)}
                 className="form-input"
-                style={{
-                  borderColor: hasAgeError() ? "#ef4444" : "#d1d5db",
-                  borderWidth: hasAgeError() ? "2px" : "1px",
-                }}
+                style={{ borderColor: hasAgeError() ? "#ef4444" : "#d1d5db", borderWidth: hasAgeError() ? "2px" : "1px" }}
               />
               {hasAgeError() && (
                 <div
@@ -446,28 +444,11 @@ const App = () => {
                 padding: "1rem",
               }}
             >
-              <div
-                className="benefits-header"
-                style={{ marginBottom: "0.5rem" }}
-              >
+              <div className="benefits-header" style={{ marginBottom: "0.5rem" }}>
                 <span style={{ fontSize: "1.25rem" }}>⚠️</span>
-                <h3
-                  style={{
-                    fontSize: "0.875rem",
-                    color: "#92400e",
-                    margin: 0,
-                  }}
-                >
-                  입력 안내
-                </h3>
+                <h3 style={{ fontSize: "0.875rem", color: "#92400e", margin: 0 }}>입력 안내</h3>
               </div>
-              <div
-                style={{
-                  fontSize: "0.75rem",
-                  color: "#92400e",
-                  lineHeight: "1.4",
-                }}
-              >
+              <div style={{ fontSize: "0.75rem", color: "#92400e", lineHeight: "1.4" }}>
                 정확한 복지 혜택 진단을 위해 모든 정보를 정확히 입력해주세요.
               </div>
             </div>
@@ -478,26 +459,21 @@ const App = () => {
   };
 
   const renderDiagnosisResult = () => {
+    // 🧩 기존 샘플(폴백)
     const allResults = [
       {
         id: 1,
         name: "청년도약계좌",
-        description:
-          "청년층의 자산 형성을 지원하는 적금 상품으로, 월 70만원까지 납입 가능하며 정부지원금이 추가됩니다.",
+        description: "청년층의 자산 형성을 지원하는 적금 상품으로, 월 70만원까지 납입 가능하며 정부지원금이 추가됩니다.",
         icon: "💰",
         status: "신청 가능",
         deadline: "2024.12.31",
-        benefits: [
-          "월 최대 70만원 납입",
-          "정부지원금 월 6만원",
-          "만기 시 최대 5,000만원",
-        ],
+        benefits: ["월 최대 70만원 납입", "정부지원금 월 6만원", "만기 시 최대 5,000만원"],
       },
       {
         id: 2,
         name: "청년 전세자금 대출",
-        description:
-          "만 34세 이하 청년층을 대상으로 한 전세자금 지원 프로그램입니다.",
+        description: "만 34세 이하 청년층을 대상으로 한 전세자금 지원 프로그램입니다.",
         icon: "🏠",
         status: "신청 가능",
         deadline: "상시 접수",
@@ -506,8 +482,7 @@ const App = () => {
       {
         id: 3,
         name: "국민취업지원제도",
-        description:
-          "취업취약계층 및 청년층을 위한 맞춤형 취업지원 서비스를 제공합니다.",
+        description: "취업취약계층 및 청년층을 위한 맞춤형 취업지원 서비스를 제공합니다.",
         icon: "💼",
         status: "신청 가능",
         deadline: "2024.11.30",
@@ -515,57 +490,28 @@ const App = () => {
       },
     ];
 
-    const diagnosisResults = allResults.filter(
-      (item) => item.status === "신청 가능"
-    );
-
-    const handleAddToFavorites = (welfare) => {
-      const isAlreadyFavorite = favoriteWelfares.some(
-        (item) => item.id === welfare.id
-      );
-
-      if (isAlreadyFavorite) {
-        alert(`"${welfare.name}"은(는) 이미 즐겨찾기에 있습니다.`);
-        return;
-      }
-
-      setFavoriteWelfares((prev) => [...prev, welfare]);
-      alert(`"${welfare.name}"이(가) 즐겨찾기에 추가되었습니다!`);
-    };
+    // ✅ 서버 응답 있으면 그걸 사용(정규화), 없으면 기존 샘플 폴백
+    const source = (recommendedPolicies?.length ? recommendedPolicies : allResults).map(normalizePolicyToWelfare);
+    const diagnosisResults = source.filter((item) => item.status === "신청 가능");
 
     const getStatusStyle = (status) => {
-      if (status === "신청 가능") {
-        return { backgroundColor: "#dcfce7", color: "#166534" };
-      } else if (status === "신청 완료") {
-        return { backgroundColor: "#dbeafe", color: "#1e40af" };
-      } else {
-        return { backgroundColor: "#fee2e2", color: "#dc2626" };
-      }
+      if (status === "신청 가능") return { backgroundColor: "#dcfce7", color: "#166534" };
+      if (status === "신청 완료") return { backgroundColor: "#dbeafe", color: "#1e40af" };
+      return { backgroundColor: "#fee2e2", color: "#dc2626" };
     };
 
     return (
       <div className="result-content">
         <div
           className="benefits-section"
-          style={{
-            marginBottom: "1.5rem",
-            backgroundColor: "#f0f9ff",
-            border: "1px solid #bae6fd",
-          }}
+          style={{ marginBottom: "1.5rem", backgroundColor: "#f0f9ff", border: "1px solid #bae6fd" }}
         >
           <div className="benefits-header">
             <span style={{ fontSize: "1.5rem" }}>🎯</span>
             <h3 style={{ margin: 0, color: "#0369a1" }}>복지 혜택 진단 결과</h3>
           </div>
-          <div
-            style={{
-              fontSize: "0.875rem",
-              color: "#0369a1",
-              lineHeight: "1.5",
-            }}
-          >
-            입력하신 정보를 바탕으로 {diagnosisResults.length}개의 신청 가능한
-            복지 혜택을 찾았습니다.
+          <div style={{ fontSize: "0.875rem", color: "#0369a1", lineHeight: "1.5" }}>
+            입력하신 정보를 바탕으로 {diagnosisResults.length}개의 신청 가능한 복지 혜택을 찾았습니다.
           </div>
         </div>
 
@@ -575,55 +521,39 @@ const App = () => {
               <div className="welfare-header">
                 <div className="welfare-icon">{welfare.icon}</div>
                 <div className="welfare-info">
-                  <h3 style={{ margin: "0 0 0.75rem 0", fontSize: "1.125rem" }}>
-                    {welfare.name}
-                  </h3>
+                  <h3 style={{ margin: "0 0 0.75rem 0", fontSize: "1.125rem" }}>{welfare.name}</h3>
 
-                  <p
-                    style={{
-                      margin: "0 0 0.75rem 0",
-                      fontSize: "0.875rem",
-                      color: "#6b7280",
-                      lineHeight: "1.5",
-                    }}
-                  >
+                  <p style={{ margin: "0 0 0.75rem 0", fontSize: "0.875rem", color: "#6b7280", lineHeight: "1.5" }}>
                     {welfare.description}
                   </p>
 
-                  <div style={{ marginBottom: "0.75rem" }}>
-                    <div
-                      style={{
-                        fontSize: "0.75rem",
-                        fontWeight: "600",
-                        color: "#374151",
-                        marginBottom: "0.25rem",
-                      }}
-                    >
-                      주요 혜택:
-                    </div>
-                    {welfare.benefits.map((benefit, index) => (
+                  {welfare.benefits?.length > 0 && (
+                    <div style={{ marginBottom: "0.75rem" }}>
                       <div
-                        key={index}
-                        style={{
-                          fontSize: "0.75rem",
-                          color: "#6b7280",
-                          marginLeft: "0.5rem",
-                          marginBottom: "0.125rem",
-                        }}
+                        style={{ fontSize: "0.75rem", fontWeight: "600", color: "#374151", marginBottom: "0.25rem" }}
                       >
-                        • {benefit}
+                        주요 혜택:
                       </div>
-                    ))}
-                  </div>
+                      {welfare.benefits.map((benefit, index) => (
+                        <div
+                          key={index}
+                          style={{ fontSize: "0.75rem", color: "#6b7280", marginLeft: "0.5rem", marginBottom: "0.125rem" }}
+                        >
+                          • {benefit}
+                        </div>
+                      ))}
+                    </div>
+                  )}
 
-                  <div
-                    style={{
-                      display: "flex",
-                      gap: "0.5rem",
-                    }}
-                  >
+                  {welfare.deadline && (
+                    <div style={{ fontSize: "0.75rem", color: "#374151", marginBottom: "0.5rem" }}>
+                      📅 마감일: {welfare.deadline}
+                    </div>
+                  )}
+
+                  <div style={{ display: "flex", gap: "0.5rem" }}>
                     <button
-                      onClick={() => handleAddToFavorites(welfare)}
+                      onClick={() => addToFavoriteWelfares(welfare)}
                       style={{
                         width: "100%",
                         backgroundColor: "#22c55e",
@@ -640,12 +570,8 @@ const App = () => {
                         justifyContent: "center",
                         gap: "0.5rem",
                       }}
-                      onMouseOver={(e) =>
-                        (e.target.style.backgroundColor = "#16a34a")
-                      }
-                      onMouseOut={(e) =>
-                        (e.target.style.backgroundColor = "#22c55e")
-                      }
+                      onMouseOver={(e) => (e.target.style.backgroundColor = "#16a34a")}
+                      onMouseOut={(e) => (e.target.style.backgroundColor = "#22c55e")}
                     >
                       ⭐ 즐겨찾기 추가
                     </button>
@@ -656,41 +582,19 @@ const App = () => {
           ))}
         </div>
 
-        <button
-          onClick={() => handleTabChange("check")}
-          className="retry-button"
-          style={{ marginTop: "1.5rem" }}
-        >
+        <button onClick={() => handleTabChange("check")} className="retry-button" style={{ marginTop: "1.5rem" }}>
           🔄 다시 진단하기
         </button>
 
         <div
           className="benefits-section"
-          style={{
-            marginTop: "1rem",
-            backgroundColor: "#fef3c7",
-            border: "1px solid #fbbf24",
-          }}
+          style={{ marginTop: "1rem", backgroundColor: "#fef3c7", border: "1px solid #fbbf24" }}
         >
           <div className="benefits-header" style={{ marginBottom: "0.5rem" }}>
             <span style={{ fontSize: "1.25rem" }}>💡</span>
-            <h3
-              style={{
-                fontSize: "0.875rem",
-                color: "#92400e",
-                margin: 0,
-              }}
-            >
-              진단 결과 안내
-            </h3>
+            <h3 style={{ fontSize: "0.875rem", color: "#92400e", margin: 0 }}>진단 결과 안내</h3>
           </div>
-          <div
-            style={{
-              fontSize: "0.75rem",
-              color: "#92400e",
-              lineHeight: "1.4",
-            }}
-          >
+          <div style={{ fontSize: "0.75rem", color: "#92400e", lineHeight: "1.4" }}>
             위 결과는 신청 가능한 복지 혜택만을 표시한 것입니다.
             <br />
             각 혜택의 신청 조건을 자세히 확인하신 후 신청해 주세요.
@@ -707,8 +611,15 @@ const App = () => {
       setFavoriteWelfares((prev) => prev.filter((item) => item.id !== id));
     };
 
+    // ✅ 챗봇이 준 정책 카드들을 정규화해서 표시 (UI는 기존 카드 스타일 재사용)
+    const policyCards = chatMessages
+      .filter((msg) => msg.type === "policy")
+      .flatMap((msg) => msg.policies || []);
+    const normalizedPolicyCards = policyCards.map(normalizePolicyToWelfare);
+
     return (
       <div className="result-content">
+        {/* 기존 즐겨찾기 섹션 유지 */}
         <div className="chat-section" style={{ marginBottom: "1.5rem" }}>
           <h3>⭐ 즐겨찾기</h3>
 
@@ -730,23 +641,12 @@ const App = () => {
                           marginBottom: "0.75rem",
                         }}
                       >
-                        <span
-                          className={`status ${welfare.status.replace(
-                            " ",
-                            "\\ "
-                          )}`}
-                        >
+                        <span className={`status ${String(welfare.status).replace(" ", "\\ ")}`}>
                           {welfare.status}
                         </span>
                       </div>
 
-                      <div
-                        style={{
-                          display: "flex",
-                          gap: "0.5rem",
-                          marginTop: "0.75rem",
-                        }}
-                      >
+                      <div style={{ display: "flex", gap: "0.5rem", marginTop: "0.75rem" }}>
                         <button
                           onClick={() => handleRemoveFavorite(welfare.id)}
                           style={{
@@ -765,12 +665,8 @@ const App = () => {
                             justifyContent: "center",
                             gap: "0.5rem",
                           }}
-                          onMouseOver={(e) =>
-                            (e.target.style.backgroundColor = "#dc2626")
-                          }
-                          onMouseOut={(e) =>
-                            (e.target.style.backgroundColor = "#ef4444")
-                          }
+                          onMouseOver={(e) => (e.target.style.backgroundColor = "#dc2626")}
+                          onMouseOut={(e) => (e.target.style.backgroundColor = "#ef4444")}
                         >
                           삭제하기
                         </button>
@@ -792,16 +688,13 @@ const App = () => {
               }}
             >
               <div style={{ fontSize: "3rem", marginBottom: "1rem" }}>⭐</div>
-              <p style={{ marginBottom: "0.5rem", fontWeight: "500" }}>
-                아직 즐겨찾기한 복지가 없습니다
-              </p>
-              <p style={{ fontSize: "0.875rem" }}>
-                복지 검색에서 관심있는 혜택을 즐겨찾기로 저장해보세요
-              </p>
+              <p style={{ marginBottom: "0.5rem", fontWeight: "500" }}>아직 즐겨찾기한 복지가 없습니다</p>
+              <p style={{ fontSize: "0.875rem" }}>복지 검색에서 관심있는 혜택을 즐겨찾기로 저장해보세요</p>
             </div>
           )}
         </div>
 
+        {/* ✅ AI 상담 섹션 + 정책 카드 표시 (UI 구조 유지, 카드 스타일만 재사용) */}
         <div className="chat-section">
           <h3>🤖 AI 복지 상담</h3>
           <div className="chat-container">
@@ -815,6 +708,86 @@ const App = () => {
                 </div>
               ))}
           </div>
+
+          {/* ✅ 정책 카드: 기존 welfare-card 스타일을 재사용해 UI/UX 변화 최소화 */}
+          {normalizedPolicyCards.length > 0 && (
+            <>
+              <div style={{ margin: "1rem 0 0.5rem 0", fontWeight: 600 }}>추천 정책</div>
+              <div className="result-list">
+                {normalizedPolicyCards.map((welfare) => (
+                  <div key={welfare.id} className="welfare-card">
+                    <div className="welfare-header">
+                      <div className="welfare-icon">{welfare.icon}</div>
+                      <div className="welfare-info">
+                        <h3 style={{ margin: "0 0 0.75rem 0", fontSize: "1.125rem" }}>{welfare.name}</h3>
+                        <p style={{ margin: "0 0 0.75rem 0", fontSize: "0.875rem", color: "#6b7280", lineHeight: "1.5" }}>
+                          {welfare.description}
+                        </p>
+                        {welfare.deadline && (
+                          <div style={{ fontSize: "0.75rem", color: "#374151", marginBottom: "0.5rem" }}>
+                            📅 마감일: {welfare.deadline}
+                          </div>
+                        )}
+                        {welfare.benefits?.length > 0 && (
+                          <div style={{ marginBottom: "0.75rem" }}>
+                            <div
+                              style={{
+                                fontSize: "0.75rem",
+                                fontWeight: "600",
+                                color: "#374151",
+                                marginBottom: "0.25rem",
+                              }}
+                            >
+                              주요 혜택:
+                            </div>
+                            {welfare.benefits.map((benefit, index) => (
+                              <div
+                                key={index}
+                                style={{
+                                  fontSize: "0.75rem",
+                                  color: "#6b7280",
+                                  marginLeft: "0.5rem",
+                                  marginBottom: "0.125rem",
+                                }}
+                              >
+                                • {benefit}
+                              </div>
+                            ))}
+                          </div>
+                        )}
+                        <div style={{ display: "flex", gap: "0.5rem" }}>
+                          <button
+                            onClick={() => addToFavoriteWelfares(welfare)}
+                            style={{
+                              width: "100%",
+                              backgroundColor: "#22c55e",
+                              color: "white",
+                              border: "none",
+                              padding: "0.5rem 1rem",
+                              borderRadius: "0.5rem",
+                              fontSize: "0.875rem",
+                              fontWeight: "500",
+                              cursor: "pointer",
+                              transition: "background-color 0.2s",
+                              display: "flex",
+                              alignItems: "center",
+                              justifyContent: "center",
+                              gap: "0.5rem",
+                            }}
+                            onMouseOver={(e) => (e.target.style.backgroundColor = "#16a34a")}
+                            onMouseOut={(e) => (e.target.style.backgroundColor = "#22c55e")}
+                          >
+                            ⭐ 즐겨찾기 추가
+                          </button>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </>
+          )}
+
           <div className="chat-input-container">
             <input
               type="text"
@@ -857,9 +830,7 @@ const App = () => {
                 <div key={index} className="result-item">
                   <h5>{result.title}</h5>
                   <p>{result.amount}</p>
-                  <span className={`status ${result.status}`}>
-                    {result.status}
-                  </span>
+                  <span className={`status ${result.status}`}>{result.status}</span>
                 </div>
               ))}
             </div>
@@ -867,10 +838,7 @@ const App = () => {
         ))}
       </div>
 
-      <button
-        onClick={() => handleTabChange("check")}
-        className="new-diagnosis-btn"
-      >
+      <button onClick={() => handleTabChange("check")} className="new-diagnosis-btn">
         🆕 새로운 진단 받기
       </button>
     </div>
@@ -879,18 +847,12 @@ const App = () => {
   const LoginModal = () =>
     showLoginModal && (
       <>
-        <div
-          className="modal-overlay"
-          onClick={() => setShowLoginModal(false)}
-        />
+        <div className="modal-overlay" onClick={() => setShowLoginModal(false)} />
         <div className="login-modal">
           <div className="login-modal-content">
             <div className="modal-header">
               <h3>로그인</h3>
-              <button
-                onClick={() => setShowLoginModal(false)}
-                className="close-btn"
-              >
+              <button onClick={() => setShowLoginModal(false)} className="close-btn">
                 ✕
               </button>
             </div>
@@ -903,9 +865,7 @@ const App = () => {
                 <input
                   type="text"
                   value={loginForm.id}
-                  onChange={(e) =>
-                    setLoginForm({ ...loginForm, id: e.target.value })
-                  }
+                  onChange={(e) => setLoginForm({ ...loginForm, id: e.target.value })}
                   placeholder="아이디를 입력하세요"
                 />
               </div>
@@ -915,19 +875,14 @@ const App = () => {
                 <input
                   type="password"
                   value={loginForm.password}
-                  onChange={(e) =>
-                    setLoginForm({ ...loginForm, password: e.target.value })
-                  }
+                  onChange={(e) => setLoginForm({ ...loginForm, password: e.target.value })}
                   placeholder="비밀번호를 입력하세요"
                 />
               </div>
             </div>
 
             <div className="modal-buttons">
-              <button
-                onClick={() => setShowLoginModal(false)}
-                className="cancel-btn"
-              >
+              <button onClick={() => setShowLoginModal(false)} className="cancel-btn">
                 취소
               </button>
               <button onClick={handleLogin} className="login-btn">
