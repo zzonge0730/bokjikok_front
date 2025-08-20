@@ -11,6 +11,7 @@ const App = () => {
   const [userName, setUserName] = useState("");
   const [loginForm, setLoginForm] = useState({ id: "", password: "" });
   const API_BASE = "https://bokjikok.onrender.com";
+  const [recommendedPolicies, setRecommendedPolicies] = useState([]);
   // 즐겨찾기 상태 추가
   const [favoriteWelfares, setFavoriteWelfares] = useState([
     {
@@ -100,44 +101,42 @@ const App = () => {
   const handleTabChange = (tabId) => {
     setActiveTab(tabId);
   };
-
   const handleSendMessage = async () => {
     if (!chatInput.trim()) return;
 
-    const newUserMessage = {
-      id: Date.now(),
-      type: "user",
-      message: chatInput,
-    };
+    const newUserMessage = { id: Date.now(), type: "user", message: chatInput };
     setChatMessages((prev) => [...prev, newUserMessage]);
     const currentInput = chatInput;
     setChatInput("");
 
     try {
-      const res = await fetch(`${API_BASE}/chat`, {
+      const API_URL = process.env.REACT_APP_API_URL || "http://localhost:5000";
+      const res = await fetch(`${API_URL}/chat`, {   // ✅ 여기 수정됨
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ message: currentInput }),
+        body: JSON.stringify({ message: chatInput }),
       });
       const data = await res.json();
 
-      const botResponse = {
-        id: Date.now() + 1,
-        type: "bot",
-        message: data.reply || "응답을 불러올 수 없습니다.",
-      };
-      setChatMessages((prev) => [...prev, botResponse]);
-    } catch (err) {
-      console.error(err);
-      const botResponse = {
-        id: Date.now() + 1,
-        type: "bot",
-        message: "❌ 서버 오류로 응답을 가져올 수 없습니다.",
-      };
-      setChatMessages((prev) => [...prev, botResponse]);
+      // 🗨️ 1. GPT 자연어 답변 (말풍선)
+      if (data.reply) {
+        setChatMessages((prev) => [
+          ...prev,
+          { id: Date.now(), type: "bot", message: data.reply }
+        ]);
+      }
+
+      // 🃏 2. 정책 카드 (항상 최신으로 교체)
+      if (data.policies) {
+        setChatMessages((prev) => [
+          ...prev.filter((msg) => msg.type !== "policy"), // 기존 카드 지우고
+          { id: Date.now() + 1, type: "policy", policies: data.policies }
+        ]);
+      }
+    } catch (error) {
+      console.error("❌ Chat API error:", error);
     }
   };
-
 
   const getDefaultResponse = (userMessage) => {
     const message = userMessage.toLowerCase();
@@ -286,13 +285,13 @@ const App = () => {
       }
 
       try {
-        const res = await fetch(`${API_BASE}/diagnosis`, {
+        const res = await fetch(`${API_BASE}/routes/diagnosis`, {
           method: "POST",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify(formData),
         });
         const data = await res.json();
-
+        setRecommendedPolicies(data.policies || []);
         if (res.ok) {
           console.log("✅ 진단 성공:", data);
           // TODO: 받은 데이터를 diagnosis 결과 state에 저장
@@ -806,13 +805,15 @@ const App = () => {
         <div className="chat-section">
           <h3>🤖 AI 복지 상담</h3>
           <div className="chat-container">
-            {chatMessages.map((message) => (
-              <div key={message.id} className={`chat-message ${message.type}`}>
-                {message.message.split("\n").map((line, index) => (
-                  <div key={index}>{line}</div>
-                ))}
-              </div>
-            ))}
+            {chatMessages
+              .filter((msg) => msg.type === "bot" || msg.type === "user")
+              .map((msg) => (
+                <div key={msg.id} className={`chat-message ${msg.type}`}>
+                  {msg.message.split("\n").map((line, i) => (
+                    <div key={i}>{line}</div>
+                  ))}
+                </div>
+              ))}
           </div>
           <div className="chat-input-container">
             <input
