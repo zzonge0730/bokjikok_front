@@ -10,6 +10,7 @@ const App = () => {
   const [isLoggedIn, setIsLoggedIn] = useState(false);
   const [userName, setUserName] = useState("");
   const [loginForm, setLoginForm] = useState({ id: "", password: "" });
+  const [diagnosisDone, setDiagnosisDone] = useState(false);
 
   // ✅ env 우선 + 기본값 (기존 상수 유지)
   const API_BASE = process.env.REACT_APP_API_BASE || "https://bokjikok.onrender.com";
@@ -109,7 +110,32 @@ const App = () => {
   };
 
   const handleTabChange = (tabId) => {
-    setActiveTab(tabId);
+      // 진단이 완료되지 않았는데 '마이페이지' 탭을 누르면 경고
+      if (tabId === "result" && !diagnosisDone) {
+          setAlertMessage("복지 진단 후 마이페이지에 접속할 수 있습니다.");
+          return;
+      }
+      setActiveTab(tabId);
+  };
+  const handleSubmit = async (e) => {
+    e.preventDefault();
+    try {
+      const res = await fetch("/routes/diagnosis", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(formData),
+      });
+
+      if (!res.ok) throw new Error("서버 응답 오류");
+      const data = await res.json();
+
+      // ✅ 진단 완료 표시
+      setDiagnosisDone(true);
+
+      // TODO: 결과 페이지 이동 or 상태 업데이트
+    } catch (err) {
+      alert("서버와 통신 중 오류가 발생했습니다.");
+    }
   };
 
   const handleSendMessage = async () => {
@@ -289,6 +315,7 @@ const App = () => {
         setRecommendedPolicies(data.policies || []);
         if (res.ok) {
           console.log("✅ 진단 성공:", data);
+          setDiagnosisDone(true);
           handleTabChange("diagnosis");
         } else {
           alert(data.error || "진단 요청 실패");
